@@ -1,0 +1,119 @@
+# ChronoGrid: git for the physical world
+
+> "Alexa, where did I leave my safety goggles?"
+> *"You put the safety goggles in Drawer 2 at 9:27 PM, about an hour ago."* The screen loops the 5-second moment you set them down, with a box around them.
+
+ChronoGrid gives a home or workshop a **commit history**. An on-device camera pipeline records *what was put where, and when* into an append-only ledger. A **self-hosted MCP server** (spec 2025-11-25, Streamable HTTP) exposes that history to **Alexa+** as git-style verbs. A **deterministic linter daemon** watches for real-world bugs, like a soldering iron left on with nobody at the bench, and slides a warning onto the ambient screen.
+
+![ChronoGrid ambient screen](docs/media/ambient-screen.png)
+
+**Hackathon:** Build, Ship, Shape (Amazon Developer Hackathon 2026)
+**Primary track:** Alexa+ (self-hosted MCP server, 2025-11-25, Streamable HTTP, plus a simulated Alexa+ ambient screen)
+**Mini challenge:** AWS Builder (Strands Agents SDK, Amazon Bedrock / Nova 2 Lite, Amazon Polly, Amazon S3)
+
+---
+
+## What it does
+
+| Git verb | Say to Alexa+ | MCP tool | What happens |
+| --- | --- | --- | --- |
+| `git log` | "Where did I leave the multimeter?" | `where_is`, `object_log` | Spoken answer plus a **rewind MCP App** that loops the placement clip and lets you step through the object's history with the D-pad |
+| `git blame` | "Who moved my keys?" | `blame` | When and where it last moved, and whether a person was present (presence only, no identity) |
+| `git status` | "What's on the workbench?" | `room_status` | Objects per zone, people present, appliances still on, uncommitted changes |
+| `git commit` | "Commit the workbench as clean." | `commit_room` | Snapshots a zone's known-good layout |
+| `git diff` | "What changed on the bench since I committed it?" | `room_diff` | Red and green diff: what's missing (and where it went) and what's new |
+| `lint` | "Warn me if the soldering iron is on and nobody's at the bench for two minutes." | `propose_lint_rule` → `approve_lint_rule` | Bedrock compiles your words into a **typed rule**, shown as a pull request you approve; a deterministic daemon enforces it |
+| `lint --fix` | "I'm on it, snooze that." | `snooze_alert` | Snoozes the hazard card |
+
+### The three engines
+1. **Retrospective (the physical git log).** YOLO-World runs on-device and turns camera frames into `placed`, `moved` and `removed` events, each with a bounding box and a 5-second H.264 clip in which faces are blurred.
+2. **Predictive (the real-world linter).** *ChronoLint* is a small typed rule language (`appliance_on`, `person_absent`, `object_missing`, `time_window`, `sequence_not_followed`). The language model only writes rules; it never decides whether one fires.
+3. **Multimodal delivery.** Alexa+ answers by voice (Amazon Polly) while the TV-style ambient screen shows the matching view: rewind, diff, status, rule PR or hazard HUD. You navigate it with arrow keys and OK/Back like a Fire TV remote.
+
+## Why it matters
+- **Makerspaces and school labs:** tool accountability ("who had the oscilloscope last?") and safety (unattended heat sources) without anyone policing the room.
+- **Aging in place and caregiving:** "Did Mom turn the stove off?" and "where are her glasses?", answered from evidence instead of guesswork, and enforced by rules the family approved.
+- **ADHD and executive function:** pre-flight checks ("your keys aren't on the entry table") and a memory you can actually query.
+
+Cameras already record terabytes of footage nobody watches. ChronoGrid turns that footage into a small, queryable, privacy-preserving **ledger of facts**.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Cam["Webcam / Ring-style camera"] --> Edge["Edge: YOLO-World + placement tracker (on-device)"]
+  Edge -->|events| Ledger[("SQLite ledger (append-only)")]
+  Edge -->|"face-blurred H.264 clips"| S3["Amazon S3 (presigned, 7-day expiry)"]
+  Ledger --> MCP["ChronoGrid MCP server (2025-11-25, Streamable HTTP)"]
+  Ledger --> Linter["ChronoLint daemon (deterministic)"]
+  Alexa["Alexa+ simulation: Strands agent on Amazon Bedrock (Nova 2 Lite)"] -->|MCP client| MCP
+  Alexa --> Polly["Amazon Polly voice"]
+  Alexa -->|"session memory"| S3
+  MCP -->|"ui://chronogrid/rewind.html (MCP App)"| Screen["Ambient screen (10-foot UI)"]
+  Linter -->|"WebSocket HUD"| Screen
+  Screen -->|"push-to-talk"| Alexa
+```
+
+- **One process** (`server/api.py`) serves the MCP endpoint at `/mcp`, REST at `/api`, the screen WebSocket at `/ws`, the MCP App at `/apps`, and the web UI.
+- The **Strands agent** connects to `/mcp` as a regular MCP client, exactly as Alexa+ connects to a self-hosted MCP server, so the same server works with Alexa+, Claude, VS Code or any MCP host.
+- **Deterministic boundary:** every tool returns a `say` sentence built from ledger rows. The model is told to speak it rather than invent times or places. Alerts come from `server/rules.py`, never from the LLM.
+- **Privacy:** detection runs locally; only events (labels and boxes) and short clips with blurred faces leave the device. Presence is tracked, identity is not. Clips expire after 7 days.
+
+More detail: [docs/architecture.md](docs/architecture.md) · AWS usage: [docs/aws-integration.md](docs/aws-integration.md)
+
+## Quick start
+
+Requirements: Python 3.11+, Node 18+, AWS credentials with Amazon Bedrock (Nova 2 Lite) and Polly access in `us-east-1`.
+
+```powershell
+git clone https://github.com/emarc99/ChronoGrid.git
+cd ChronoGrid
+python -m venv .venv
+.\.venv\Scripts\pip install -e ".[dev]"        # macOS/Linux: .venv/bin/pip
+copy .env.example .env                          # optionally set CHRONOGRID_S3_BUCKET
+.\scripts\run.ps1 -Seed                         # builds the UI, seeds demo history, starts on :8787
+```
+
+Open **http://127.0.0.1:8787**. Hold **Space** to talk (Chrome/Edge), or type. Arrow keys move around the ChronoGrid, **Enter** opens a rewind, **Esc** goes back, **S** snoozes an alert, and **H** toggles the demo "soldering iron" smart plug.
+
+macOS/Linux: `python -m seed.seed && python -m server.api`, and build the UI once with `cd web && npm install && npm run build`.
+
+### Add the edge camera
+```powershell
+.\.venv\Scripts\pip install -e ".[edge]"
+.\.venv\Scripts\python -m edge.run                 # webcam 0; or --source demo.mp4 --loop
+```
+Zones are normalized polygons in [seed/zones.json](seed/zones.json) (the default splits the frame into Tool Shelf, Workbench, Entry Table and Drawer 2). The vocabulary is open: `--vocab "person,keys,multimeter,glasses,pill bottle"`.
+
+### Connect any MCP host (Alexa+, Claude, VS Code, Cursor)
+Endpoint: `http://127.0.0.1:8787/mcp` (Streamable HTTP). To expose it to a cloud host, tunnel it and set `CHRONOGRID_HOST=0.0.0.0`.
+
+```powershell
+.\.venv\Scripts\python scripts\mcp_smoke.py
+# protocol offered : 2025-11-25
+# protocol agreed  : 2025-11-25
+# tools: where_is [MCP App ui://chronogrid/rewind.html], object_log, blame, room_status, ...
+```
+
+## Tests
+```powershell
+.\.venv\Scripts\python -m pytest -q
+```
+The suite covers the ledger (commit/diff, presence), the ChronoLint evaluator, the linter alert lifecycle, the edge placement tracker, and the MCP tools including the MCP App binding.
+
+## Repository layout
+```
+server/   ledger, ChronoLint rules + linter daemon, MCP server (+ apps/rewind.html MCP App), FastAPI entry
+agent/    Strands + Bedrock "Alexa+" brain (MCP client), Polly voice
+edge/     YOLO-World detector, placement tracker, face-blurred clip writer, edge runner
+web/      Vite + React ambient screen (MCP Apps host, heatmap, diff/status/rule PR views, HUD)
+seed/     demo zones and a day of history
+scripts/  run script, MCP protocol smoke test
+docs/     architecture, AWS integration, friction log, product feedback, demo script
+```
+
+## Built during the hackathon
+Everything in this repository was written during the submission window (see the commit history).
+
+## License
+[MIT](LICENSE)
