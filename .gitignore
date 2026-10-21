@@ -17,6 +17,7 @@ data/*.db
 data/*.db-*
 data/clips/
 data/frames/
+data/sessions/
 *.pt
 
 # Env / secrets
