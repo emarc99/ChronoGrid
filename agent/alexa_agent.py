@@ -15,6 +15,7 @@ from typing import Any
 
 from strands import Agent
 from strands.agent.conversation_manager import SlidingWindowConversationManager
+from strands.hooks import BeforeToolCallEvent
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 
@@ -50,6 +51,10 @@ class AlexaBrain:
         self._client: MCPClient | None = None
         self._agent: Agent | None = None
         self._lock = threading.Lock()
+        self._trace: list[dict[str, Any]] = []
+
+    def _record_tool(self, event: BeforeToolCallEvent) -> None:
+        self._trace.append({"tool": event.tool_use.get("name"), "input": event.tool_use.get("input")})
 
     def _session_manager(self):
         session_id = "household-" + datetime.now().strftime("%Y%m%d")
@@ -78,17 +83,18 @@ class AlexaBrain:
             callback_handler=None,
             name="alexa-plus",
         )
+        self._agent.hooks.add_callback(BeforeToolCallEvent, self._record_tool)
         return self._agent
 
     def ask(self, utterance: str) -> dict[str, Any]:
         with self._lock:
             agent = self._ensure()
             agent.system_prompt = SYSTEM_PROMPT.format(now=datetime.now().strftime("%A %I:%M %p"))
-            start = len(agent.messages)
+            self._trace = []
             t0 = time.perf_counter()
             result = agent(utterance)
             latency_ms = int((time.perf_counter() - t0) * 1000)
-            trace = _tool_trace(agent.messages[start:])
+            trace = list(self._trace)
         return {"reply": str(result).strip(), "tools": trace, "latency_ms": latency_ms, "model": self.model_id}
 
     def close(self) -> None:
@@ -96,13 +102,3 @@ class AlexaBrain:
             self._client.stop(None, None, None)
             self._client = None
             self._agent = None
-
-
-def _tool_trace(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    trace = []
-    for message in messages:
-        for block in message.get("content", []):
-            if "toolUse" in block:
-                use = block["toolUse"]
-                trace.append({"tool": use.get("name"), "input": use.get("input")})
-    return trace
