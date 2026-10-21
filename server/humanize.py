@@ -17,10 +17,11 @@ def ago(ts: float, now: float | None = None) -> str:
     minutes = round(seconds / 60)
     if minutes < 60:
         return f"{minutes} minutes ago"
-    hours = round(seconds / 3600, 1)
+    hours = round(seconds / 3600)
     if hours < 24:
-        return f"{hours:g} hours ago"
-    return f"{round(hours / 24)} days ago"
+        return "about an hour ago" if hours == 1 else f"about {hours} hours ago"
+    days = round(hours / 24)
+    return "yesterday" if days == 1 else f"{days} days ago"
 
 
 def join(items: list[str]) -> str:
