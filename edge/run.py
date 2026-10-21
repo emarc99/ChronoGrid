@@ -134,14 +134,25 @@ def main() -> None:
     tracker = PlacementTracker()
     agent = EdgeAgent(args.server, args.presence_zone, args.appliance, args.appliance_zone, Path("data/clips/edge"))
     detections, last_detect, det_rate = [], 0.0, 0.0
+    misses, last_beat = 0, 0.0
 
     while True:
         ok, frame = cap.read()
         if not ok:
-            if args.loop and not isinstance(source, int):
+            if isinstance(source, int):
+                # webcams drop frames while the detector hogs the CPU
+                misses += 1
+                if misses > 50:
+                    log.error("camera stopped delivering frames")
+                    break
+                time.sleep(0.02)
+                continue
+            if args.loop:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
+            log.info("end of %s", args.source)
             break
+        misses = 0
         now = time.time()
         agent.buffer.push(now, frame)
         if now - last_detect >= args.detect_every:
@@ -151,6 +162,10 @@ def main() -> None:
             last_detect = now
             for ev in tracker.update(now, detections):
                 agent.handle(ev)
+            if args.no_preview and now - last_beat >= 5:
+                last_beat = now
+                seen = ", ".join(f"{d.label} {d.confidence:.2f}" for d in detections) or "nothing"
+                log.info("%.1f det/s | sees: %s", det_rate, seen)
         if not args.no_preview:
             cv2.imshow("ChronoGrid Edge", draw(frame, agent, detections, tracker, det_rate))
             key = cv2.waitKey(1) & 0xFF
