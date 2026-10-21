@@ -1,0 +1,6 @@
+[
+  {"id": "shelf", "name": "Tool Shelf", "kind": "storage", "polygon": [[0.0, 0.0], [0.5, 0.0], [0.5, 0.4], [0.0, 0.4]]},
+  {"id": "workbench", "name": "Workbench", "kind": "bench", "polygon": [[0.0, 0.4], [0.5, 0.4], [0.5, 1.0], [0.0, 1.0]]},
+  {"id": "entry", "name": "Entry Table", "kind": "entry", "polygon": [[0.5, 0.0], [1.0, 0.0], [1.0, 0.5], [0.5, 0.5]]},
+  {"id": "drawer-2", "name": "Drawer 2", "kind": "storage", "polygon": [[0.5, 0.5], [1.0, 0.5], [1.0, 1.0], [0.5, 1.0]]}
+]
