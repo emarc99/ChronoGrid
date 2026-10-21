@@ -26,7 +26,8 @@
   .title { font-size:26px; font-weight:700; text-transform:capitalize; }
   .sub { color:var(--dim); font-size:16px; margin-top:4px; }
   .sub b { color:var(--ink); }
-  .history { display:flex; gap:8px; padding:12px 20px 18px; overflow-x:auto; }
+  .history { display:flex; gap:8px; padding:12px 20px 18px; overflow-x:auto; scrollbar-width:none; }
+  .history::-webkit-scrollbar { display:none; }
   .chip { flex:0 0 auto; border:1px solid #26344d; background:#0e1520; color:var(--dim); border-radius:10px;
           padding:8px 12px; font-size:13px; cursor:pointer; }
   .chip.on { border-color:var(--accent); color:var(--ink); background:#10261f; }
@@ -106,6 +107,10 @@
   });
 
   window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "Backspace") {
+      notify("ui/notifications/request-teardown", {});
+      return;
+    }
     if (!data || !data.history) return;
     if (e.key === "ArrowRight") idx = Math.min(idx + 1, data.history.length - 1);
     else if (e.key === "ArrowLeft") idx = Math.max(idx - 1, 0);

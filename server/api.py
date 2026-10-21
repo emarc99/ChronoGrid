@@ -233,6 +233,7 @@ async def screen_socket(ws: WebSocket) -> None:
 
 
 app.mount("/clips", StaticFiles(directory=settings.clips_dir), name="clips")
+app.mount("/apps", StaticFiles(directory=ROOT / "server" / "apps"), name="apps")
 _web = ROOT / "web" / "dist"
 if _web.exists():
     app.mount("/", StaticFiles(directory=_web, html=True), name="web")
