@@ -218,6 +218,16 @@ async def tts(text: str = Query(min_length=1, max_length=1000)) -> Response:
     return Response(audio, media_type="audio/mpeg", headers={"Cache-Control": "max-age=3600"})
 
 
+@app.post("/api/demo/reset")
+def demo_reset(with_iron_rule: bool = False) -> dict[str, Any]:
+    """Re-seed a believable history (for demo re-takes)."""
+    from seed.seed import seed
+
+    seed(ledger, with_iron_rule=with_iron_rule)
+    hub.publish({"type": "event", "event": {}})
+    return {"ok": True, "events": len(ledger.events(limit=10000))}
+
+
 @app.websocket("/ws")
 async def screen_socket(ws: WebSocket) -> None:
     await ws.accept()
