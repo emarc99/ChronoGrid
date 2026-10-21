@@ -147,6 +147,7 @@ def state() -> dict[str, Any]:
         "rules": ledger.rules(),
         "recent": [_event_out(e) for e in ledger.events(limit=12, kinds=["placed", "moved", "removed"])],
         "now": time.time(),
+        "utc_offset": time.localtime().tm_gmtoff,
     }
 
 
