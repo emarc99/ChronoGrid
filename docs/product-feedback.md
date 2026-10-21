@@ -31,4 +31,4 @@
 
 ## Fire TV / Vega Developer Tools
 - **Used for:** Planned as the primary target; we designed the 10-foot UI around D-pad navigation.
-- **Needs work:** No Windows/WSL host support and no hosted simulator, so Windows-only developers can't show the required on-device or simulator demo. That's why ChronoGrid entered the Alexa+ track.
+- **Needs work:** Windows isn't a documented host. The Vega Virtual Device does run under WSL2 once KVM is enabled by hand, but the VVD image lacks the WebView module, so the `vegaWebview` template can't be tested without a physical device.

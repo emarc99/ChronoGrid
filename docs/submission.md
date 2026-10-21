@@ -24,7 +24,7 @@ ChronoGrid turns an on-device camera into an append-only **ledger** of what was 
 - **Ambient screen:** React 10-foot UI with D-pad navigation, push-to-talk, a live MCP tool trace, and a minimal **MCP Apps host** implementing the ext-apps postMessage protocol.
 
 ## Challenges
-- Fire TV was the original target, but the Vega SDK and simulator don't support Windows/WSL and we had no Vega device, so we pivoted to Alexa+ and kept the 10-foot interaction model.
+- Getting the Vega Virtual Device running on a Windows laptop meant enabling KVM inside WSL2 by hand, and the simulator can't load WebView apps.
 - Bedrock Anthropic access changed mid-build; Nova 2 Lite turned out faster and handled the nested rule schema well.
 - Turning noisy per-frame detections into trustworthy "placed" and "removed" facts required stability counting and occlusion checks.
 

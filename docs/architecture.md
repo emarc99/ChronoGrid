@@ -43,4 +43,4 @@ The derived tables (`object_state`, `presence`, `appliance_state`) are the "work
   - Push-to-talk uses browser speech recognition; replies and hazard announcements are spoken with **Amazon Polly**.
 
 ## Why Alexa+ (and not Fire TV) as the primary track
-The idea was first scoped for Fire TV. The Vega SDK and Vega Virtual Device don't support Windows or WSL hosts, and no physical Vega device was available, so the 10-foot UI ships as a web ambient screen designed for D-pad navigation. The server is UI-agnostic, so a Vega or Fire OS client only needs to consume `/ws` and `/apps/rewind.html`.
+The 10-foot UI ships as a web ambient screen designed for D-pad navigation. The Vega Virtual Device does run under WSL2 (see `scripts/vega/`), but it lacks the WebView module, so a Vega client has to be a native React Native for Vega app. The server is UI-agnostic, so a Vega or Fire OS client only needs to consume `/ws` and `/apps/rewind.html`.
