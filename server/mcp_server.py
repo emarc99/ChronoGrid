@@ -15,7 +15,7 @@ from mcp.server.apps import Apps, ResourceCsp
 from mcp.server.mcpserver import MCPServer
 from pydantic import ValidationError
 
-from .humanize import ago, clock, join
+from .humanize import ago, clock, join, place
 from .hub import Hub
 from .ledger import Ledger
 from .rules import LintRule, referenced_zones
@@ -97,7 +97,7 @@ def build_mcp(ledger: Ledger, hub: Hub, clips: ClipStore, csp_domains: list[str]
             result.update(view)
             removed_after = history and history[0].kind == "removed"
             result["say"] = (
-                f"You put the {label} in {view['zone_name']} at {view['time_text']}, {view['ago_text']}."
+                f"You put the {label} {place(view['zone_name'])} at {view['time_text']}, {view['ago_text']}."
                 + (" It was picked up again after that." if removed_after else "")
             )
         hub.publish({"type": "screen", "view": "rewind", "data": result})
@@ -130,7 +130,7 @@ def build_mcp(ledger: Ledger, hub: Hub, clips: ClipStore, csp_domains: list[str]
         events = ledger.events(label=label, kinds=["placed", "moved", "removed"], limit=max(1, min(limit, 20)))
         entries = [_event_view(ledger, clips, e) for e in events]
         lines = [
-            f"{'took it from' if e['kind'] == 'removed' else 'put it in'} {e['zone_name']} at {e['time_text']}"
+            f"{'took it from the ' + e['zone_name'].lower() if e['kind'] == 'removed' else 'put it ' + place(e['zone_name'])} at {e['time_text']}"
             for e in entries[:3]
         ]
         result = {"found": True, "object": label, "entries": entries, "say": f"For the {label}: you " + join(lines) + "."}

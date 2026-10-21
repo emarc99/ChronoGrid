@@ -24,6 +24,17 @@ def ago(ts: float, now: float | None = None) -> str:
     return "yesterday" if days == 1 else f"{days} days ago"
 
 
+_CONTAINERS = ("drawer", "box", "bin", "cabinet", "bag", "cupboard", "fridge", "freezer")
+
+
+def place(zone_name: str) -> str:
+    """'Drawer 2' -> 'in Drawer 2', 'Workbench' -> 'on the workbench'."""
+    lower = zone_name.lower()
+    if any(word in lower for word in _CONTAINERS):
+        return f"in {zone_name}"
+    return f"on the {lower}"
+
+
 def join(items: list[str]) -> str:
     if not items:
         return ""
