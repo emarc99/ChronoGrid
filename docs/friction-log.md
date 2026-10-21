@@ -54,10 +54,16 @@ Severity: **S1** blocks progress · **S2** costs significant time or forces a de
 - **Severity:** S3 (ChronoGrid falls back to text plus its own screen)
 - **Suggestion:** A short "MCP on Alexa+ screens" doc covering supported `_meta.ui` fields, size limits, and media policy.
 
-### 7. Fire TV: Vega SDK / Vega Virtual Device can't run on Windows (or WSL)
-- **Tool:** Vega Developer Tools 0.24
-- **Task:** Run the 10-foot UI on the Vega Virtual Device without owning a Vega device.
-- **Actual:** The docs state that Windows and WSL aren't supported build hosts and that the SDK needs native macOS or Ubuntu with KVM. A Windows-only developer can't produce the Fire TV track's required "running on device or simulator" video.
-- **Severity:** S1 for the Fire TV track (it forced the switch to Alexa+ as the primary track)
-- **Workaround:** Built the ambient screen as a web app with Fire TV remote key mapping; the server is client-agnostic.
-- **Suggestion:** A cloud-hosted VVD (streamed like a remote emulator), or a supported WSL2 + KVM path. Even an unsupported-but-documented recipe would unblock hackathon developers on Windows.
+### 7. Fire TV: Vega Virtual Device on Windows works through WSL2, but only off the documented path
+- **Tool:** Vega Developer Tools 0.24.12112, Vega CLI 1.4.5, WSL2 Ubuntu 24.04 (kernel 6.18), Intel i5-1135G7
+- **Task:** Run a Vega app on the Vega Virtual Device (VVD) from a Windows laptop with no Vega device.
+- **Expected:** The docs list only macOS and native Ubuntu, so we first assumed Windows developers were locked out of the Fire TV track.
+- **Actual:** It works, but it took about 45 minutes of trial and error:
+  1. `/dev/kvm` is missing in WSL2 until `modprobe kvm_intel` is run and the user is added to the `kvm` group.
+  2. The `ppa:deadsnakes` step in the install guide returned HTTP 503. It's only needed for crash symbolication, but the guide presents it as required.
+  3. The VVD is killed when the shell that ran `vega virtual-device start` exits, so `start` followed by `run-app` in a new shell fails with "Device not found".
+  4. A warm re-boot of a killed instance failed with "failed to access shell" after the 60 s deadline; deleting the instance fixed it.
+  5. The `vegaWebview` template builds, but the VVD can't install it: "missing modules ... `/com.amazon.kepler.webview_4@IWebview_4` ... Test your app using a Fire TV Stick instead." The stock `helloWorld` React Native template runs fine.
+- **Severity:** S2 (blocked us for an evening; a hosted web app can't be wrapped for the simulator)
+- **Workaround:** Our setup scripts are in [`scripts/vega/`](../scripts/vega/).
+- **Suggestion:** Document WSL2 + KVM as a supported (or at least known-good) host, make the Python 3.8 step optional, keep the VVD alive independently of the launching shell, and ship the WebView module in the VVD image (or say up front in the template list that `vegaWebview` needs a physical device).
