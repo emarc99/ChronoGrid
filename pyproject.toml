@@ -1,0 +1,28 @@
+[project]
+name = "chronogrid"
+version = "0.1.0"
+description = "Git for the physical world: a spatial-temporal memory ledger and real-world linter exposed over MCP for Alexa+."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=2.1",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.29",
+    "python-multipart>=0.0.9",
+    "pydantic>=2.6",
+    "boto3>=1.34",
+    "httpx>=0.27",
+    "strands-agents>=1.40",
+]
+
+[project.optional-dependencies]
+edge = [
+    "ultralytics>=8.3",
+    "opencv-python>=4.9",
+    "numpy>=1.26",
+]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
