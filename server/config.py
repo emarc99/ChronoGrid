@@ -46,7 +46,7 @@ def load_settings() -> Settings:
         db = ROOT / db
     return Settings(
         region=os.environ.get("AWS_REGION", "us-east-1"),
-        model_id=os.environ.get("CHRONOGRID_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0"),
+        model_id=os.environ.get("CHRONOGRID_MODEL_ID", "us.amazon.nova-2-lite-v1:0"),
         s3_bucket=os.environ.get("CHRONOGRID_S3_BUCKET") or None,
         polly_voice=os.environ.get("CHRONOGRID_POLLY_VOICE", "Joanna"),
         host=os.environ.get("CHRONOGRID_HOST", "127.0.0.1"),
