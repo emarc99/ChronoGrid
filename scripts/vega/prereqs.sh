@@ -10,6 +10,10 @@ chmod 660 /dev/kvm
 usermod -aG kvm "$U"
 echo kvm_intel > /etc/modules-load.d/kvm.conf
 echo 'KERNEL=="kvm", GROUP="kvm", MODE="0660"' > /etc/udev/rules.d/99-kvm.rules
+# WSL doesn't always honour modules-load.d, so also load KVM from the WSL boot hook
+if ! grep -q kvm_intel /etc/wsl.conf 2>/dev/null; then
+  printf '\n[boot]\ncommand="modprobe kvm_intel; chown root:kvm /dev/kvm; chmod 660 /dev/kvm"\n' >> /etc/wsl.conf
+fi
 
 if snap list curl >/dev/null 2>&1; then snap remove curl; fi
 apt-get update -qq
