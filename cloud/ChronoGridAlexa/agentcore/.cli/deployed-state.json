@@ -1,0 +1,23 @@
+{
+  "targets": {
+    "default": {
+      "resources": {
+        "runtimes": {
+          "AlexaBrain": {
+            "runtimeId": "ChronoGridAlexa_AlexaBrain-mCWMTa5e5J",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-east-1:226579698869:runtime/ChronoGridAlexa_AlexaBrain-mCWMTa5e5J",
+            "roleArn": "arn:aws:iam::226579698869:role/AgentCore-ChronoGridAlexa-ApplicationAgentAlexaBrai-4u1H3UxspJzq"
+          }
+        },
+        "memories": {
+          "AlexaBrainMemory": {
+            "memoryId": "ChronoGridAlexa_AlexaBrainMemory-eKBPxdH4Bk",
+            "memoryArn": "arn:aws:bedrock-agentcore:us-east-1:226579698869:memory/ChronoGridAlexa_AlexaBrainMemory-eKBPxdH4Bk"
+          }
+        },
+        "stackName": "AgentCore-ChronoGridAlexa-default",
+        "deployHash": "d3bd3f966fe4bf02"
+      }
+    }
+  }
+}

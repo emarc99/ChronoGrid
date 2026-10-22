@@ -1,0 +1,71 @@
+{
+  "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
+  "name": "ChronoGridAlexa",
+  "version": 1,
+  "managedBy": "CDK",
+  "tags": {
+    "agentcore:created-by": "agentcore-cli",
+    "agentcore:project-name": "ChronoGridAlexa"
+  },
+  "runtimes": [
+    {
+      "name": "AlexaBrain",
+      "build": "CodeZip",
+      "entrypoint": "main.py",
+      "codeLocation": "app/AlexaBrain/",
+      "runtimeVersion": "PYTHON_3_14",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {"name": "CHRONOGRID_MODEL_ID", "value": "us.amazon.nova-2-lite-v1:0"}
+      ]
+    }
+  ],
+  "memories": [
+    {
+      "name": "AlexaBrainMemory",
+      "eventExpiryDuration": 30,
+      "strategies": [
+        {
+          "type": "SEMANTIC",
+          "namespaceTemplates": [
+            "/users/{actorId}/facts"
+          ]
+        },
+        {
+          "type": "USER_PREFERENCE",
+          "namespaceTemplates": [
+            "/users/{actorId}/preferences"
+          ]
+        },
+        {
+          "type": "SUMMARIZATION",
+          "namespaceTemplates": [
+            "/summaries/{actorId}/{sessionId}"
+          ]
+        },
+        {
+          "type": "EPISODIC",
+          "namespaceTemplates": [
+            "/episodes/{actorId}/{sessionId}"
+          ],
+          "reflectionNamespaceTemplates": [
+            "/episodes/{actorId}"
+          ]
+        }
+      ]
+    }
+  ],
+  "knowledgeBases": [],
+  "credentials": [],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [],
+  "policyEngines": [],
+  "configBundles": [],
+  "abTests": [],
+  "harnesses": [],
+  "datasets": [],
+  "capacityProviders": [],
+  "payments": []
+}
