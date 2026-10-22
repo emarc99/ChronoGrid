@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Animated, StyleSheet, Text, View} from 'react-native';
 import type {Alert} from '../api';
 import {colors} from '../theme';
@@ -6,8 +6,10 @@ import {FocusButton} from './FocusButton';
 
 export const AlertCard = ({alert, onSnooze}: {alert: Alert; onSnooze: () => void}) => {
   const slide = useRef(new Animated.Value(500)).current;
+  // the focus engine ignores off-screen views, so claim focus once the card has landed
+  const [landed, setLanded] = useState(false);
   useEffect(() => {
-    Animated.spring(slide, {toValue: 0, useNativeDriver: true}).start();
+    Animated.spring(slide, {toValue: 0, useNativeDriver: true}).start(() => setLanded(true));
   }, [slide]);
   const critical = alert.severity === 'critical';
   return (
@@ -23,7 +25,7 @@ export const AlertCard = ({alert, onSnooze}: {alert: Alert; onSnooze: () => void
         </Text>
       ))}
       <View style={styles.row}>
-        <FocusButton label="Snooze 10 min" preferred onPress={onSnooze} />
+        <FocusButton label="Snooze 10 min" preferred={landed} onPress={onSnooze} />
       </View>
     </Animated.View>
   );
