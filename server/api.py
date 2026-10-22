@@ -8,9 +8,10 @@ import logging
 import time
 from typing import Any
 
-from fastapi import FastAPI, File, HTTPException, Query, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, HTTPException, Query, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
+from mcp.server.transport_security import TransportSecuritySettings
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from starlette.concurrency import run_in_threadpool
@@ -32,7 +33,13 @@ clips = ClipStore(settings.clips_dir, settings.base_url, settings.s3_bucket, set
 linter = Linter(ledger, hub, settings.lint_interval)
 csp = [settings.base_url] + ([f"https://{settings.s3_bucket}.s3.amazonaws.com"] if settings.s3_bucket else [])
 mcp = build_mcp(ledger, hub, clips, csp_domains=csp)
-mcp_app = mcp.streamable_http_app(streamable_http_path="/mcp", host=settings.host)
+# Tunnel hostnames are random, so with a bearer token configured the token replaces
+# DNS-rebinding protection (a rebinding browser page can't present it).
+mcp_app = mcp.streamable_http_app(
+    streamable_http_path="/mcp",
+    host=settings.host,
+    transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False) if settings.mcp_token else None,
+)
 
 _brain = None
 _voice = None
@@ -41,9 +48,15 @@ _voice = None
 def brain():
     global _brain
     if _brain is None:
-        from agent.alexa_agent import AlexaBrain
+        if settings.agent_runtime_arn:
+            from agent.cloud_brain import CloudBrain
 
-        _brain = AlexaBrain(settings.mcp_url, settings.model_id, settings.region, settings.s3_bucket)
+            _brain = CloudBrain(settings.agent_runtime_arn, settings.region, lambda: settings.public_url,
+                                settings.mcp_token, settings.model_id)
+        else:
+            from agent.alexa_agent import AlexaBrain
+
+            _brain = AlexaBrain(settings.mcp_url, settings.model_id, settings.region, settings.s3_bucket)
     return _brain
 
 
@@ -71,6 +84,17 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="ChronoGrid", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.router.routes.extend(mcp_app.routes)
+
+
+@app.middleware("http")
+async def tunnel_guard(request: Request, call_next):
+    """Traffic arriving through the public tunnel may only reach /mcp, and only with the token."""
+    if "cf-ray" in request.headers:
+        if not request.url.path.startswith("/mcp"):
+            return JSONResponse({"error": "not exposed"}, status_code=404)
+        if not settings.mcp_token or request.headers.get("authorization") != f"Bearer {settings.mcp_token}":
+            return JSONResponse({"error": "unauthorized"}, status_code=401)
+    return await call_next(request)
 
 
 # ---- edge ingest -----------------------------------------------------------
@@ -231,6 +255,9 @@ def demo_reset(with_iron_rule: bool = False) -> dict[str, Any]:
 
 @app.websocket("/ws")
 async def screen_socket(ws: WebSocket) -> None:
+    if "cf-ray" in ws.headers:
+        await ws.close(code=1008)
+        return
     await ws.accept()
     queue = hub.subscribe()
     try:
