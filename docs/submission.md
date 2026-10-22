@@ -4,10 +4,21 @@
 Git for the physical world: ask Alexa+ where you left anything, diff your workbench, and lint your home for hazards.
 
 ## Tracks
-- **Primary:** Alexa+ (self-hosted MCP server, spec 2025-11-25, Streamable HTTP, plus a simulated Alexa+ ambient screen and a native Fire TV companion app)
-- **Mini challenge:** AWS Builder (Amazon Bedrock AgentCore Runtime + Memory, Strands Agents SDK, Bedrock / Nova 2 Lite, Amazon Polly, Amazon S3)
+Select every one that applies; a project can win at most one track and one mini challenge.
+- **Alexa+:** self-hosted MCP server (spec 2025-11-25, Streamable HTTP) with an MCP App, driving a simulated Alexa+ ambient screen
+- **Fire TV:** *ChronoGrid TV*, a native React Native for Vega app driven by Alexa+ over the same MCP server
+- **Mini challenge, AWS Builder:** Amazon Bedrock AgentCore Runtime + Memory, Strands Agents SDK, Bedrock / Nova 2 Lite, Amazon Polly, Amazon S3
+- **Mini challenge, Open Source:** MIT-licensed, public repository
+
+## How judges can test it
+No camera, Alexa+ device or Fire TV is required; `.\scripts\run.ps1 -Seed` loads a day of workshop history.
+1. **MCP only, no AWS account:** connect MCP Inspector, Claude Desktop, VS Code or Cursor to `http://127.0.0.1:8787/mcp` and call `where_is`, `room_diff` or `room_status`.
+2. **Full Alexa+ flow:** with AWS credentials (Bedrock in `us-east-1`), open `http://127.0.0.1:8787` and talk or type.
+3. **Fire TV:** `scripts/vega/` builds and installs ChronoGrid TV on the Vega Virtual Device.
+Step-by-step: the "Try it (for judges)" section of the README.
 
 ## Inspiration
+<!-- TODO(emarc): open with your own moment, in first person, 2-3 sentences: the tool you lost, the iron you left on, who you'd build this for. Judges said the human story is what stands out. -->
 Homes and workshops are full of cameras that record everything and remember nothing. Meanwhile we lose tools, forget the soldering iron, and walk out without our keys. Developers solved "what changed and who changed it" for code decades ago with git. We wanted the same for physical space, with an assistant you can just ask.
 
 ## What it does
