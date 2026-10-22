@@ -69,6 +69,13 @@ flowchart LR
 
 More detail: [docs/architecture.md](docs/architecture.md) · AWS usage: [docs/aws-integration.md](docs/aws-integration.md)
 
+## Try it (for judges)
+No camera, Fire TV or Alexa+ device is needed: `-Seed` loads a believable day of workshop history.
+
+1. **The MCP server alone (no AWS account):** run `.\scripts\run.ps1 -Seed`, then point any MCP host at `http://127.0.0.1:8787/mcp`, for example `npx @modelcontextprotocol/inspector` (transport: Streamable HTTP). Call `where_is {"object": "safety goggles"}`, `room_diff {"zone": "workbench"}` or `room_status`. Claude Desktop, VS Code and Cursor also render the rewind **MCP App**.
+2. **The full Alexa+ experience (AWS credentials with Bedrock in `us-east-1`):** open http://127.0.0.1:8787, type or hold Space and say "Where did I leave my safety goggles?", then "Warn me if the soldering iron is on and nobody's at the bench for 20 seconds", "approve it", and press **H** to switch the iron on.
+3. **Fire TV:** see [Run ChronoGrid TV](#run-chronogrid-tv-on-fire-tv-vega) (Vega SDK on macOS/Ubuntu, or WSL2 on Windows).
+
 ## Quick start
 
 Requirements: Python 3.11+, Node 18+, AWS credentials with Amazon Bedrock (Nova 2 Lite) and Polly access in `us-east-1`.
