@@ -14,6 +14,13 @@
 - **Onboarding:** About 15 minutes to a working agent once the right version was installed.
 - **Would build again:** Yes. It's the fastest path we've found from MCP tools to a production-style agent.
 
+## Amazon Bedrock AgentCore (Runtime + Memory)
+- **Used for:** Hosting the Alexa+ brain as a serverless runtime, and long-term household memory (semantic, user-preference, summary and episodic strategies).
+- **Worked well:** `agentcore create` generated a Strands project with Memory already wired into `AgentCoreMemorySessionManager`; `agentcore deploy` produced a working runtime, memory and IAM role in one command. The runtime called our MCP server back over Streamable HTTP with custom headers and no extra glue. Warm turns take 2–3 s.
+- **Needs work:** Two tools share the `agentcore` name (the retiring Python starter toolkit and the new npm CLI), so tutorials disagree; `uv` is an unlisted prerequisite for CodeZip; the first deploy took about 8.5 minutes with little progress detail; the cold start was about 13 s.
+- **Onboarding:** About an hour from `create` to a working cloud invocation, most of it on the first deploy.
+- **Would build again:** Yes. Memory with built-in strategies is a big step up from storing raw transcripts in S3.
+
 ## Amazon Bedrock (Amazon Nova 2 Lite)
 - **Used for:** Intent interpretation, tool selection, and compiling natural-language safety rules into typed ChronoLint rules.
 - **Worked well:** Nova 2 Lite chose the correct tool on every test utterance, filled a nested discriminated-union schema correctly ("a couple of minutes" became `for_seconds: 120`), and answered in about 3.3 s end to end, which works for voice.
@@ -30,5 +37,8 @@
 - **Worked well:** Presigned GETs play directly in `<video>` and in the sandboxed MCP App iframe.
 
 ## Fire TV / Vega Developer Tools
-- **Used for:** Planned as the primary target; we designed the 10-foot UI around D-pad navigation.
-- **Needs work:** Windows isn't a documented host. The Vega Virtual Device does run under WSL2 once KVM is enabled by hand, but the VVD image lacks the WebView module, so the `vegaWebview` template can't be tested without a physical device.
+- **Used for:** *ChronoGrid TV*, a React Native for Vega companion app tested on the Vega Virtual Device.
+- **Worked well:** Once running, the RN for Vega workflow is familiar: `build-vega` plus `vega run-app` takes about a minute. `TVFocusGuideView` and `hasTVPreferredFocus` made D-pad focus predictable, and the VVD's on-screen remote is good enough for demos.
+- **Needs work:** Windows isn't a documented host. The Vega Virtual Device does run under WSL2 once KVM is enabled by hand, but the VVD image lacks the WebView module, so the `vegaWebview` template can't be tested without a physical device. The VVD dies with the shell that started it, and its clock runs in UTC.
+- **Onboarding:** One evening to get the VVD running on Windows, then about two hours for the app.
+- **Would build again:** Yes, but we'd start with a native RN template instead of WebView.
