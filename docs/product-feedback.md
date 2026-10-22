@@ -1,5 +1,15 @@
 # Product feedback (for the Devpost form)
 
+## Top feature requests
+1. **Alexa+ MCP test console.** Let developers outside the Preview connect a self-hosted Streamable HTTP MCP server and see the planner's tool calls and the spoken reply, like the Alexa Skills Kit simulator did for skills.
+2. **Rich, actionable cards on Alexa+ screens.** Render MCP Apps (`ui://` resources) on Echo Show and Fire TV, including video and in-card actions. ChronoGrid's rule pull request is approved in place on the screen, and that pattern needs a documented home in Alexa+.
+3. **Alexa+ to Fire TV handoff.** A supported way for an Alexa+ add-on to open a specific view of a Vega app (a deep link with parameters), so "where are my keys?" can jump the TV straight to the rewind without the app keeping its own WebSocket open.
+4. **Vega Virtual Device on Windows.** Document WSL2 + KVM, keep the VVD alive independently of the launching shell, and ship the WebView module in the VVD image.
+5. **AgentCore Runtime warm capacity.** A minimum-warm-sessions setting for voice workloads, so a cold start (13–45 s in our tests) never lands on a spoken question.
+6. **Privacy-preserving vision primitives.** On-device detection with cloud-side event schemas (labels, boxes, presence, no identity) as a first-class pattern for Ring and Fire TV camera apps.
+
+Details per product follow; the step-by-step problems are in the [friction log](friction-log.md).
+
 ## Alexa+ (self-hosted MCP server, spec 2025-11-25, Streamable HTTP)
 - **Used for:** ChronoGrid's integration surface: ten git-verb tools plus an MCP App (`ui://chronogrid/rewind.html`).
 - **Worked well:** Building on the open MCP standard instead of a proprietary skill model meant one server works with Alexa+, Claude, VS Code and our own Strands agent. Streamable HTTP is simple to host next to the rest of the app (one FastAPI process).
