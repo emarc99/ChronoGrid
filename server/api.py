@@ -35,8 +35,11 @@ csp = [settings.base_url] + ([f"https://{settings.s3_bucket}.s3.amazonaws.com"] 
 mcp = build_mcp(ledger, hub, clips, csp_domains=csp)
 # Tunnel hostnames are random, so with a bearer token configured the token replaces
 # DNS-rebinding protection (a rebinding browser page can't present it).
+# Stateless: long-lived clients (the AgentCore runtime caches its MCP connection) keep
+# working across server restarts instead of hitting "unknown session ID".
 mcp_app = mcp.streamable_http_app(
     streamable_http_path="/mcp",
+    stateless_http=True,
     host=settings.host,
     transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False) if settings.mcp_token else None,
 )
@@ -73,6 +76,8 @@ def voice():
 async def lifespan(_: FastAPI):
     hub.bind(asyncio.get_running_loop())
     lint_task = asyncio.create_task(linter.run())
+    if settings.agent_runtime_arn:
+        brain()  # starts warming the AgentCore runtime before the first question
     async with mcp.session_manager.run():
         log.info("ChronoGrid up: MCP at %s, UI at %s", settings.mcp_url, settings.base_url)
         yield
