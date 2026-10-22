@@ -5,7 +5,7 @@
 - In a second terminal, run `.\.venv\Scripts\python -m edge.run` with the webcam over the "workbench" (props: multimeter, safety goggles, keys, mug, and a desk lamp as the "soldering iron").
 - Screen recorder at 1080p capturing the browser. A phone filming the desk gives a nice picture-in-picture.
 - Lint heartbeat: `CHRONOGRID_LINT_INTERVAL=3` in `.env`.
-- AgentCore brain: `.\scripts\tunnel.ps1` running and `CHRONOGRID_AGENT_RUNTIME_ARN` set, then send one warm-up question (the first cold start takes about 13 s; warm turns take 2–3 s).
+- AgentCore brain: `.\scripts\tunnel.ps1` running and `CHRONOGRID_AGENT_RUNTIME_ARN` set, and start the server at least a minute before recording; it warms the runtime and keeps it warm (warm turns take 3–4 s).
 - Fire TV: `wsl -e bash -l scripts/vega/vvd-up.sh`, then `scripts/vega/tv-deploy.sh`. Snap the "Vega Virtual Device" window to the right half of the screen for the Fire TV shots.
 
 | Time | Shot | Voiceover / action |

@@ -21,7 +21,7 @@ ChronoGrid turns an on-device camera into an append-only **ledger** of what was 
 - **Edge (Python):** YOLO-World open-vocabulary detection on a laptop CPU (~6 fps) and a placement tracker that emits placed, moved and removed events plus person presence, with occlusion handling. 5-second **H.264 clips with faces blurred** are uploaded to a private **Amazon S3** bucket (presigned URLs, 7-day expiry).
 - **MCP server:** official MCP Python SDK over **Streamable HTTP**, negotiating **2025-11-25**. Ten tools, each returning a deterministic `say` sentence, and an **MCP App** (`ui://chronogrid/rewind.html`).
 - **ChronoLint:** a Pydantic rule language whose JSON schema *is* the `propose_lint_rule` tool input, so the LLM authors rules and never judges them.
-- **Alexa+ brain on AgentCore:** a **Strands Agents SDK** agent with **Amazon Nova 2 Lite**, deployed to **Amazon Bedrock AgentCore Runtime** (CDK, CodeZip). It reaches the household's MCP server as a regular MCP client, through a Cloudflare tunnel that exposes only `/mcp` behind a bearer token. **AgentCore Memory** (semantic, user-preference, summary and episodic strategies) remembers the household across sessions; **Amazon Polly** is its voice. Warm turns take 2–3 s. The same agent also runs in-process for offline development.
+- **Alexa+ brain on AgentCore:** a **Strands Agents SDK** agent with **Amazon Nova 2 Lite**, deployed to **Amazon Bedrock AgentCore Runtime** (CDK, CodeZip). It reaches the household's MCP server as a regular MCP client, through a Cloudflare tunnel that exposes only `/mcp` behind a bearer token. **AgentCore Memory** (semantic, user-preference, summary and episodic strategies) remembers the household across sessions; **Amazon Polly** is its voice. Turns take 3–4 s end to end, and a model-free keep-warm ping avoids cold starts. The same agent also runs in-process for offline development.
 - **Ambient screen:** React 10-foot UI with D-pad navigation, push-to-talk, a live MCP tool trace, and a minimal **MCP Apps host** implementing the ext-apps postMessage protocol.
 - **Fire TV:** *ChronoGrid TV*, built with **React Native for Vega**: a scaled 1920x1080 canvas, `TVFocusGuideView` D-pad focus, a spring-animated hazard card and a live WebSocket link to the server. Developed on Windows by running the **Vega Virtual Device under WSL2 with KVM**.
 
@@ -35,7 +35,7 @@ ChronoGrid turns an on-device camera into an append-only **ledger** of what was 
 - A voice answer grounded in evidence: every answer cites a ledger row and has a clip behind it.
 - Safety rules authored in plain English but enforced deterministically.
 - One MCP server that works with any MCP host, including MCP Apps, and drives both a web screen and a native Fire TV app.
-- A production-shaped Alexa+ brain: serverless on AgentCore with managed long-term memory, under 3 s per warm turn.
+- A production-shaped Alexa+ brain: serverless on AgentCore with managed long-term memory, answering in 3–4 s.
 
 ## What we learned
 MCP is a good fit for ambient assistants: long-lived state lives in the server and any assistant can borrow it. Keeping the LLM on the language side of a deterministic boundary is what makes a safety feature believable.

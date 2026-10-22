@@ -16,8 +16,8 @@
 
 ## Amazon Bedrock AgentCore (Runtime + Memory)
 - **Used for:** Hosting the Alexa+ brain as a serverless runtime, and long-term household memory (semantic, user-preference, summary and episodic strategies).
-- **Worked well:** `agentcore create` generated a Strands project with Memory already wired into `AgentCoreMemorySessionManager`; `agentcore deploy` produced a working runtime, memory and IAM role in one command. The runtime called our MCP server back over Streamable HTTP with custom headers and no extra glue. Warm turns take 2–3 s.
-- **Needs work:** Two tools share the `agentcore` name (the retiring Python starter toolkit and the new npm CLI), so tutorials disagree; `uv` is an unlisted prerequisite for CodeZip; the first deploy took about 8.5 minutes with little progress detail; the cold start was about 13 s.
+- **Worked well:** `agentcore create` generated a Strands project with Memory already wired into `AgentCoreMemorySessionManager`; `agentcore deploy` produced a working runtime, memory and IAM role in one command. The runtime called our MCP server back over Streamable HTTP with custom headers and no extra glue. Warm turns take 3–4 s end to end.
+- **Needs work:** Two tools share the `agentcore` name (the retiring Python starter toolkit and the new npm CLI), so tutorials disagree; `uv` is an unlisted prerequisite for CodeZip; the first deploy took about 8.5 minutes with little progress detail; cold starts ranged from 13 s to about 45 s, so we added a keep-warm ping. A documented warm-pool or minimum-instances option would help voice workloads.
 - **Onboarding:** About an hour from `create` to a working cloud invocation, most of it on the first deploy.
 - **Would build again:** Yes. Memory with built-in strategies is a big step up from storing raw transcripts in S3.
 
