@@ -117,15 +117,18 @@ def main() -> None:
     p.add_argument("--presence-zone", default="workbench")
     p.add_argument("--appliance", default="soldering iron")
     p.add_argument("--appliance-zone", default="workbench")
+    p.add_argument("--width", type=int, default=0, help="request a webcam resolution (default: camera native)")
+    p.add_argument("--height", type=int, default=0)
     p.add_argument("--no-preview", action="store_true")
     p.add_argument("--loop", action="store_true", help="loop a video file source")
     args = p.parse_args()
 
     source = int(args.source) if args.source.isdigit() else args.source
     cap = cv2.VideoCapture(source, cv2.CAP_DSHOW) if isinstance(source, int) else cv2.VideoCapture(source)
-    if isinstance(source, int):
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+    if isinstance(source, int) and args.width and args.height:
+        # laptop webcams often drop to ~3 fps when forced above their native mode
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, args.width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, args.height)
     if not cap.isOpened():
         raise SystemExit(f"cannot open source {args.source}")
     file_fps = cap.get(cv2.CAP_PROP_FPS) if not isinstance(source, int) else 0
@@ -134,15 +137,14 @@ def main() -> None:
     tracker = PlacementTracker()
     agent = EdgeAgent(args.server, args.presence_zone, args.appliance, args.appliance_zone, Path("data/clips/edge"))
     detections, last_detect, det_rate = [], 0.0, 0.0
-    misses, last_beat = 0, 0.0
+    last_frame, last_beat = time.time(), 0.0
 
     while True:
         ok, frame = cap.read()
         if not ok:
             if isinstance(source, int):
-                # webcams drop frames while the detector hogs the CPU
-                misses += 1
-                if misses > 50:
+                # webcams warm up slowly and drop frames while the detector hogs the CPU
+                if time.time() - last_frame > 10:
                     log.error("camera stopped delivering frames")
                     break
                 time.sleep(0.02)
@@ -152,8 +154,7 @@ def main() -> None:
                 continue
             log.info("end of %s", args.source)
             break
-        misses = 0
-        now = time.time()
+        now = last_frame = time.time()
         agent.buffer.push(now, frame)
         if now - last_detect >= args.detect_every:
             t0 = time.perf_counter()
@@ -162,7 +163,7 @@ def main() -> None:
             last_detect = now
             for ev in tracker.update(now, detections):
                 agent.handle(ev)
-            if args.no_preview and now - last_beat >= 5:
+            if now - last_beat >= 5:
                 last_beat = now
                 seen = ", ".join(f"{d.label} {d.confidence:.2f}" for d in detections) or "nothing"
                 log.info("%.1f det/s | sees: %s", det_rate, seen)
