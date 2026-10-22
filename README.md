@@ -8,8 +8,8 @@ ChronoGrid gives a home or workshop a **commit history**. An on-device camera pi
 ![ChronoGrid ambient screen](docs/media/ambient-screen.png)
 
 **Hackathon:** Build, Ship, Shape (Amazon Developer Hackathon 2026)
-**Primary track:** Alexa+ (self-hosted MCP server, 2025-11-25, Streamable HTTP, plus a simulated Alexa+ ambient screen)
-**Mini challenge:** AWS Builder (Strands Agents SDK, Amazon Bedrock / Nova 2 Lite, Amazon Polly, Amazon S3)
+**Primary track:** Alexa+ (self-hosted MCP server, 2025-11-25, Streamable HTTP, plus a simulated Alexa+ ambient screen), with a native **Fire TV (Vega) companion app**, *ChronoGrid TV*
+**Mini challenge:** AWS Builder (Amazon Bedrock AgentCore Runtime + Memory, Strands Agents SDK, Bedrock / Nova 2 Lite, Amazon Polly, Amazon S3)
 
 ---
 
@@ -46,16 +46,18 @@ flowchart LR
   Edge -->|"face-blurred H.264 clips"| S3["Amazon S3 (presigned, 7-day expiry)"]
   Ledger --> MCP["ChronoGrid MCP server (2025-11-25, Streamable HTTP)"]
   Ledger --> Linter["ChronoLint daemon (deterministic)"]
-  Alexa["Alexa+ simulation: Strands agent on Amazon Bedrock (Nova 2 Lite)"] -->|MCP client| MCP
+  Alexa["Alexa+ brain: Strands agent on AgentCore Runtime (Nova 2 Lite)"] -->|"MCP client via tunnel + bearer token"| MCP
+  Alexa <-->|"household facts and preferences"| Mem["AgentCore Memory"]
   Alexa --> Polly["Amazon Polly voice"]
-  Alexa -->|"session memory"| S3
-  MCP -->|"ui://chronogrid/rewind.html (MCP App)"| Screen["Ambient screen (10-foot UI)"]
+  MCP -->|"ui://chronogrid/rewind.html (MCP App)"| Screen["Ambient screen (web, 10-foot UI)"]
   Linter -->|"WebSocket HUD"| Screen
+  Linter -->|"WebSocket"| TV["ChronoGrid TV (Fire TV / Vega, React Native)"]
   Screen -->|"push-to-talk"| Alexa
 ```
 
 - **One process** (`server/api.py`) serves the MCP endpoint at `/mcp`, REST at `/api`, the screen WebSocket at `/ws`, the MCP App at `/apps`, and the web UI.
-- The **Strands agent** connects to `/mcp` as a regular MCP client, exactly as Alexa+ connects to a self-hosted MCP server, so the same server works with Alexa+, Claude, VS Code or any MCP host.
+- The **Strands agent** connects to `/mcp` as a regular MCP client, exactly as Alexa+ connects to a self-hosted MCP server, so the same server works with Alexa+, Claude, VS Code or any MCP host. In production it runs on **Amazon Bedrock AgentCore Runtime** with **AgentCore Memory** and reaches the home server through a tunnel that exposes only `/mcp`, behind a bearer token. Without AWS it runs in-process.
+- **ChronoGrid TV** is a native React Native for Vega app for Fire TV. It subscribes to the same WebSocket, so asking Alexa+ "where are my keys?" jumps the TV to the rewind view, a hazard slides in as an alert card, and rule PRs are approved with the remote's OK button.
 - **Deterministic boundary:** every tool returns a `say` sentence built from ledger rows. The model is told to speak it rather than invent times or places. Alerts come from `server/rules.py`, never from the LLM.
 - **Privacy:** detection runs locally; only events (labels and boxes) and short clips with blurred faces leave the device. Presence is tracked, identity is not. Clips expire after 7 days.
 
@@ -95,6 +97,25 @@ Endpoint: `http://127.0.0.1:8787/mcp` (Streamable HTTP). To expose it to a cloud
 # tools: where_is [MCP App ui://chronogrid/rewind.html], object_log, blame, room_status, ...
 ```
 
+### Run the Alexa+ brain on AgentCore (optional)
+```powershell
+cd cloud\ChronoGridAlexa; agentcore deploy --yes; agentcore status   # note the runtime ARN
+cd ..\..; .\scripts\tunnel.ps1                                        # exposes only /mcp
+# .env: CHRONOGRID_AGENT_RUNTIME_ARN=<arn>, CHRONOGRID_MCP_TOKEN=<random>
+.\scripts\run.ps1
+```
+Details: [docs/aws-integration.md](docs/aws-integration.md#alexa-brain-on-agentcore).
+
+### Run ChronoGrid TV on Fire TV (Vega)
+The TV app lives in [`tv/`](tv/). On Windows, the Vega SDK and Vega Virtual Device run under WSL2 with KVM; [`scripts/vega/`](scripts/vega/) has the setup, boot and deploy scripts:
+```powershell
+wsl -u root -e env SUDO_USER=<wsl-user> bash scripts/vega/prereqs.sh      # once
+wsl -e bash scripts/vega/install-sdk.sh                                    # once
+wsl -e bash -l scripts/vega/vvd-up.sh                                      # keep running
+wsl -e bash -l scripts/vega/tv-deploy.sh                                   # build + install + launch
+```
+The app reaches the server at `http://10.0.2.2:8787` (the emulator's host alias); change [`tv/src/config.ts`](tv/src/config.ts) for a real Fire TV.
+
 ## Tests
 ```powershell
 .\.venv\Scripts\python -m pytest -q
@@ -104,11 +125,13 @@ The suite covers the ledger (commit/diff, presence), the ChronoLint evaluator, t
 ## Repository layout
 ```
 server/   ledger, ChronoLint rules + linter daemon, MCP server (+ apps/rewind.html MCP App), FastAPI entry
-agent/    Strands + Bedrock "Alexa+" brain (MCP client), Polly voice
+agent/    Strands + Bedrock "Alexa+" brain (MCP client), AgentCore client, Polly voice
+cloud/    AgentCore project: the Alexa+ brain for AgentCore Runtime + Memory (CDK, CodeZip)
 edge/     YOLO-World detector, placement tracker, face-blurred clip writer, edge runner
 web/      Vite + React ambient screen (MCP Apps host, heatmap, diff/status/rule PR views, HUD)
+tv/       ChronoGrid TV: React Native for Vega (Fire TV) companion app
 seed/     demo zones and a day of history
-scripts/  run script, MCP protocol smoke test
+scripts/  run and tunnel scripts, MCP protocol smoke test, Vega/WSL setup (scripts/vega)
 docs/     architecture, AWS integration, friction log, product feedback, demo script
 ```
 
