@@ -72,6 +72,8 @@ def _agent_for(session_id: str, actor_id: str, mcp_url: str, mcp_token: str | No
 
 @app.entrypoint
 async def invoke(payload: dict[str, Any], context) -> dict[str, Any]:
+    if payload.get("warmup"):
+        return {"ok": True}
     prompt = payload.get("prompt", "")
     mcp_url = payload.get("mcp_url")
     if not prompt or not mcp_url:
