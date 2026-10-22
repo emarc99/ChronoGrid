@@ -67,3 +67,14 @@ Severity: **S1** blocks progress · **S2** costs significant time or forces a de
 - **Severity:** S2 (blocked us for an evening; a hosted web app can't be wrapped for the simulator)
 - **Workaround:** Our setup scripts are in [`scripts/vega/`](../scripts/vega/).
 - **Suggestion:** Document WSL2 + KVM as a supported (or at least known-good) host, make the Python 3.8 step optional, keep the VVD alive independently of the launching shell, and ship the WebView module in the VVD image (or say up front in the template list that `vegaWebview` needs a physical device).
+
+### 8. AgentCore: two CLIs, and an unlisted `uv` prerequisite
+- **Tool:** Amazon Bedrock AgentCore CLI `@aws/agentcore` 0.31.1 on Windows 11
+- **Task:** Move the Strands Alexa+ brain to AgentCore Runtime with AgentCore Memory.
+- **Actual:**
+  1. Most blog posts and samples still use the Python `bedrock-agentcore-starter-toolkit` (`agentcore configure/launch`), which is being retired in favour of the npm CLI (`agentcore create/deploy`). The commands share a name but not a workflow, so it's easy to follow the wrong guide.
+  2. CodeZip packaging shells out to `uv`, which isn't mentioned as a prerequisite; the deploy failed until `uv` was on `PATH`.
+  3. `agentcore create` printed a "folder already exists" message but did create the project.
+  4. The first deploy took about 8.5 minutes (CDK bootstrap plus stack), with no indication of which step was slow.
+- **Severity:** S3
+- **Suggestion:** Check for `uv` up front with an install hint, add a migration note at the top of the starter-toolkit README, and show per-resource progress during the first deploy.
