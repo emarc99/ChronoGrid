@@ -68,7 +68,7 @@ class EdgeAgent:
             try:
                 write_clip(frames, path, fps=self.buffer.fps)
                 with path.open("rb") as fh:
-                    resp = self.http.post("/api/clips", files={"file": (path.name, fh, "video/mp4")})
+                    resp = self.http.post("/api/clips", files={"file": (path.name, fh, "video/mp4")}, timeout=60)
                 clip = resp.json()["clip"]
             except Exception as exc:
                 log.warning("clip failed for %s: %s", ev.label, exc)
