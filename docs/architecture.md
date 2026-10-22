@@ -37,10 +37,19 @@ The derived tables (`object_state`, `presence`, `appliance_state`) are the "work
 ## Alexa+ simulation (`agent/`, `web/`)
 - `AlexaBrain` is a **Strands Agents** `Agent` with a `BedrockModel` (Amazon **Nova 2 Lite** by default) whose tools come from `MCPClient(url=/mcp)`. Conversation memory persists across sessions through Strands' `S3SessionManager`, falling back to `FileSessionManager`.
 - A `BeforeToolCallEvent` hook records the MCP tool trace that the screen displays.
+- **On AgentCore** (when `CHRONOGRID_AGENT_RUNTIME_ARN` is set): the server's `CloudBrain` calls `InvokeAgentRuntime` with the utterance, the public MCP URL and a bearer token. The runtime (`cloud/ChronoGridAlexa/app/AlexaBrain`) builds the same Strands agent, with AgentCore Memory as its session manager (`actor_id = household`, one session per day), and calls back into `/mcp` through the tunnel. It returns `{reply, tools}`, which the server publishes to every screen.
+- **Tunnel guard:** requests that arrive through the tunnel (they carry a `cf-ray` header) can only reach `/mcp`, and only with `Authorization: Bearer <CHRONOGRID_MCP_TOKEN>`. Everything else returns 404, and the screen WebSocket is closed with code 1008. MCP's DNS-rebinding check is turned off only when the token is configured, because the token replaces it.
 - The **web ambient screen** is a 10-foot UI (Vite + React):
   - It is a minimal **MCP Apps host**: it loads `rewind.html` in a sandboxed iframe and speaks the ext-apps protocol (`ui/initialize`, `ui/notifications/initialized`, `tool-input`, `tool-result`, `size-changed`, `request-teardown`).
   - Remote-style navigation uses arrows, Enter and Esc/Back.
   - Push-to-talk uses browser speech recognition; replies and hazard announcements are spoken with **Amazon Polly**.
 
+## ChronoGrid TV: Fire TV companion (`tv/`)
+- A native **React Native for Vega** app (`com.emarc99.chronotv`). The Vega Virtual Device lacks the WebView module, so the web screen couldn't simply be wrapped.
+- It lays out a 1920x1080 design canvas and scales it to the window, so the same layout works on the VVD and on a 4K TV.
+- It fetches `/api/state`, `/api/grid` and `/api/events`, and subscribes to `/ws` with automatic reconnects. When an MCP tool runs, the server publishes a `screen` message (rewind, diff, status, commit or rule PR) and the TV opens the matching view, so asking Alexa+ "where are my keys?" switches the TV to the rewind. Hazard alerts slide in as a card, and the Alexa strip shows the utterance, the MCP tool chips and the reply.
+- D-pad focus uses `TVFocusGuideView` and `hasTVPreferredFocus`. The Snooze button takes focus only after its card has finished sliding in, because the focus engine skips off-screen views. Back returns home, and after 60 s idle the screen falls back to the heatmap.
+- On the emulator the server is `10.0.2.2:8787`. Times use the server's UTC offset because the VVD clock runs in UTC.
+
 ## Why Alexa+ (and not Fire TV) as the primary track
-The 10-foot UI ships as a web ambient screen designed for D-pad navigation. The Vega Virtual Device does run under WSL2 (see `scripts/vega/`), but it lacks the WebView module, so a Vega client has to be a native React Native for Vega app. The server is UI-agnostic, so a Vega or Fire OS client only needs to consume `/ws` and `/apps/rewind.html`.
+Voice is the primary interface and the MCP server is the core of the project, which is exactly the Alexa+ brief. The server is UI-agnostic: the web ambient screen and ChronoGrid TV are two clients of the same `/ws` stream, so the Fire TV app is a companion rather than the main entry.
