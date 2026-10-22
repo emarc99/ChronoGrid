@@ -7,6 +7,12 @@ ChronoGrid gives a home or workshop a **commit history**. An on-device camera pi
 
 ![ChronoGrid ambient screen](docs/media/ambient-screen.png)
 
+**ChronoGrid TV on Fire TV (Vega Virtual Device):** Alexa+ answers "where did I leave my safety goggles?" and the TV jumps to the rewind; a spoken safety rule arrives as a pull request approved with the remote; the linter slides in a hazard card.
+
+| Rewind (`git log`) | Lint rule PR | Hazard alert |
+| --- | --- | --- |
+| ![TV rewind view](docs/media/tv-rewind.png) | ![TV rule PR](docs/media/tv-rule-pr.png) | ![TV hazard alert](docs/media/tv-alert.png) |
+
 **Hackathon:** Build, Ship, Shape (Amazon Developer Hackathon 2026)
 **Primary track:** Alexa+ (self-hosted MCP server, 2025-11-25, Streamable HTTP, plus a simulated Alexa+ ambient screen), with a native **Fire TV (Vega) companion app**, *ChronoGrid TV*
 **Mini challenge:** AWS Builder (Amazon Bedrock AgentCore Runtime + Memory, Strands Agents SDK, Bedrock / Nova 2 Lite, Amazon Polly, Amazon S3)
