@@ -18,7 +18,8 @@ No camera, Alexa+ device or Fire TV is required; `.\scripts\run.ps1 -Seed` loads
 Step-by-step: the "Try it (for judges)" section of the README.
 
 ## Inspiration
-<!-- TODO(emarc): open with your own moment, in first person, 2-3 sentences: the tool you lost, the iron you left on, who you'd build this for. Judges said the human story is what stands out. -->
+I did my apprenticeship in computer repair shops, fixing printers, desktop and laptop motherboards, chargers and power supplies. Several of us shared the same benches, so the screwdriver or multimeter you'd just put down was never where you left it, half-finished jobs got moved, and a hot soldering iron could sit on a bench with nobody watching it. "Who had the…?" was the most-asked question in the shop, and nothing could answer it.
+
 Homes and workshops are full of cameras that record everything and remember nothing. Meanwhile we lose tools, forget the soldering iron, and walk out without our keys. Developers solved "what changed and who changed it" for code decades ago with git. We wanted the same for physical space, with an assistant you can just ask.
 
 ## What it does
