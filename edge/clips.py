@@ -30,6 +30,10 @@ class FrameBuffer:
             frame = cv2.resize(frame, (self.width, int(h * self.width / w)))
         self._frames.append((ts, frame))
 
+    @property
+    def latest(self) -> float:
+        return self._last
+
     def window(self, end: float, seconds: float = 5.0) -> list[tuple[float, np.ndarray]]:
         return [(ts, f) for ts, f in self._frames if end - seconds <= ts <= end]
 

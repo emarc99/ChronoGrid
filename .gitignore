@@ -34,6 +34,9 @@ Thumbs.db
 .idea/
 .vscode/
 
+# stock footage used as a camera source (licences forbid redistribution)
+online-clips/
+
 # local tools and tunnel state
 tools/
 data/public_url.txt

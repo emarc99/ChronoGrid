@@ -57,11 +57,15 @@ class EdgeAgent:
         elif ev.kind == "removed":
             self.post_event("removed", label=ev.label, bbox=list(ev.bbox) if ev.bbox else None, ts=ev.ts)
         elif ev.kind == "placed":
-            threading.Timer(1.2, self._clip_and_post, args=(ev,)).start()
+            threading.Thread(target=self._clip_and_post, args=(ev,)).start()
         log.info("%s %s", ev.kind, ev.label or "")
 
     def _clip_and_post(self, ev: TrackerEvent) -> None:
         clip = None
+        # a video file can be read slower than real time, so wait for the frames rather than the clock
+        deadline = time.time() + 10
+        while self.buffer.latest < ev.ts + 1.2 and time.time() < deadline:
+            time.sleep(0.1)
         frames = self.buffer.window(end=ev.ts + 1.2, seconds=5.0)
         if len(frames) > 6:
             path = self.clip_dir / clip_name(ev.label, ev.ts)
@@ -123,6 +127,8 @@ def main() -> None:
     p.add_argument("--height", type=int, default=0)
     p.add_argument("--no-preview", action="store_true")
     p.add_argument("--loop", action="store_true", help="loop a video file source")
+    p.add_argument("--warmup", type=float, default=3.0,
+                   help="video files: seconds to buffer before detecting, so early clips aren't cut short")
     args = p.parse_args()
 
     source = int(args.source) if args.source.isdigit() else args.source
@@ -140,6 +146,9 @@ def main() -> None:
     agent = EdgeAgent(args.server, args.presence_zone, args.appliance, args.appliance_zone, Path("data/clips/edge"))
     detections, last_detect, det_rate = [], 0.0, 0.0
     last_frame, last_beat = time.time(), 0.0
+    # video files run on their own timeline, so a slow detection doesn't freeze the clip
+    start, offset = time.time(), 0.0
+    duration = cap.get(cv2.CAP_PROP_FRAME_COUNT) / file_fps if file_fps else 0.0
 
     while True:
         ok, frame = cap.read()
@@ -153,12 +162,22 @@ def main() -> None:
                 continue
             if args.loop:
                 cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                offset += duration
                 continue
             log.info("end of %s", args.source)
+            if tracker.person_present:
+                agent.handle(TrackerEvent("person_exit", ts=last_frame))
             break
-        now = last_frame = time.time()
+        if file_fps:
+            video_t = offset + cap.get(cv2.CAP_PROP_POS_MSEC) / 1000
+            now = start + video_t
+            time.sleep(max(0.0, now - time.time()))
+        else:
+            video_t, now = None, time.time()
+        last_frame = now
         agent.buffer.push(now, frame)
-        if now - last_detect >= args.detect_every:
+        warming = video_t is not None and video_t < args.warmup
+        if not warming and now - last_detect >= args.detect_every:
             t0 = time.perf_counter()
             detections = detector.detect(frame)
             det_rate = 0.8 * det_rate + 0.2 * (1.0 / max(1e-3, time.perf_counter() - t0))
@@ -176,8 +195,6 @@ def main() -> None:
                 break
             if key == ord("h"):
                 agent.toggle_appliance()
-        if file_fps:
-            time.sleep(max(0.0, 1.0 / file_fps - (time.time() - now)))
 
     cap.release()
     cv2.destroyAllWindows()
