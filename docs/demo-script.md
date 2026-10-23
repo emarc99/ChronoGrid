@@ -1,5 +1,15 @@
 # Demo video script (target 2:50)
 
+**Final video:** https://youtu.be/HXjRUBO-OiU
+
+## How the video was made
+- **Camera feed:** four free Pexels stock clips replayed through the unchanged edge pipeline (`edge.run --source clip.mp4`), each watching only for the objects in that shot. Our laptop webcam couldn't reliably name hand tools ([friction log #12](friction-log.md#12-edge-vision-yolo-world-on-a-live-laptop-webcam-couldnt-name-our-hand-tools)). Every label, 5-second clip, ledger event and S3 upload shown was produced live by ChronoGrid.
+- **Alexa+:** simulated. Real Alexa+ can't connect to a self-hosted MCP server yet, so the web screen stands in for an Alexa+ ambient screen. The brain is our Strands agent on Amazon Bedrock AgentCore (Nova 2 Lite), and the voice is Amazon Polly. Voice input uses the browser's speech recognition. One rule was typed after it heard "soldering iron" as "sovereign union"; the rule pull-request card let us catch that before approving.
+- **Fire TV:** ChronoGrid TV running on the Vega Virtual Device under WSL2, driven by the keyboard and on-screen remote.
+- **Editing:** takes were recorded separately and joined. Loading pauses and mouse wiggles (the VVD repaint quirk, friction log #9) were trimmed. The Drawer 2 commit was recorded before the scissors and phone arrived, as the diff requires. The hazard fired about 2 s after the iron came on because the bench had already been empty for over 20 s, so both conditions were already true.
+
+Recording order we used: reset, replay the first mug shot; Take 1 (edge preview of the pink mug, then "Where did I leave my mug?"); Take 2 (commit Drawer 2, replay scissors and phone, "What changed in drawer 2?"); Take 3 (TV D-pad, then "Where are the scissors?" driving the TV); Take 4 (the soldering-iron rule and hazard, snooze); Take 5 (MCP smoke test, AgentCore console, idle heatmap for the title card).
+
 **Setup before recording**
 - `.\scripts\run.ps1 -Seed` then open http://127.0.0.1:8787 in a full-screen Chrome window (F11).
 - Camera feed: we replay free stock footage (Pexels, kept in the gitignored `online-clips/`) through the same edge pipeline, because the laptop webcam in a dim room couldn't name our own hand tools. Each replay watches only for the objects in that shot:

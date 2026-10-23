@@ -1,5 +1,13 @@
 # Devpost submission text
 
+**Demo video:** https://youtu.be/HXjRUBO-OiU
+
+## How the demo video was made
+- **Camera feed:** free Pexels stock clips replayed through ChronoGrid's unchanged edge pipeline (`edge.run --source clip.mp4`), because our laptop webcam couldn't reliably name hand tools (friction log #12). Every label, 5-second clip, ledger event and S3 upload shown was produced live by ChronoGrid.
+- **Alexa+:** simulated. Real Alexa+ can't connect to a self-hosted MCP server yet, so a web screen stands in for an Alexa+ ambient screen. The brain is our Strands agent on Amazon Bedrock AgentCore (Nova 2 Lite); the voice is Amazon Polly. Voice input uses the browser's speech recognition; one rule was typed after it heard "soldering iron" as "sovereign union", which the rule pull-request card let us catch before approving.
+- **Fire TV:** ChronoGrid TV on the Vega Virtual Device (WSL2), driven by the keyboard and on-screen remote.
+- **Editing:** takes were recorded separately and joined; loading pauses and mouse wiggles were trimmed. The hazard fired about 2 s after the iron came on because the bench had already been empty for over 20 s.
+
 ## Tagline
 Git for the physical world: ask Alexa+ where you left anything, diff your workbench, and lint your home for hazards.
 

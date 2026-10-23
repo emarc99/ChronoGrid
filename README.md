@@ -5,6 +5,8 @@
 
 ChronoGrid gives a home or workshop a **commit history**. An on-device camera pipeline records *what was put where, and when* into an append-only ledger. A **self-hosted MCP server** (spec 2025-11-25, Streamable HTTP) exposes that history to **Alexa+** as git-style verbs. A **deterministic linter daemon** watches for real-world bugs, like a soldering iron left on with nobody at the bench, and slides a warning onto the ambient screen.
 
+**Demo video:** https://youtu.be/HXjRUBO-OiU. The camera feed is free Pexels stock footage replayed through the unchanged edge pipeline, and Alexa+ is simulated; every label, clip, ledger event and S3 upload shown was produced live by ChronoGrid. [How the video was made](docs/demo-script.md#how-the-video-was-made).
+
 ![ChronoGrid ambient screen](docs/media/ambient-screen.png)
 
 **ChronoGrid TV on Fire TV (Vega Virtual Device):** Alexa+ answers "where did I leave my safety goggles?" and the TV jumps to the rewind; a spoken safety rule arrives as a pull request approved with the remote; the linter slides in a hazard card.
