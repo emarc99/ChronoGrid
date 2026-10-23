@@ -42,6 +42,7 @@ ChronoGrid turns an on-device camera into an append-only **ledger** of what was 
 - Letting a cloud agent call an MCP server in someone's home without exposing the home: the tunnel guard rejects everything except `/mcp` with the right token.
 - Bedrock Anthropic access changed mid-build; Nova 2 Lite turned out faster and handled the nested rule schema well.
 - Turning noisy per-frame detections into trustworthy "placed" and "removed" facts required stability counting and occlusion checks.
+- Naming hand tools on a live webcam. We first ran YOLO-World on live footage of our own props, and every model size (small, medium, large) gave poor results: only the phone was reliable, pliers and a hammer were called "scissors", and the hammer was never recognised under any wording. Wordier prompts ("red pliers"), the medium model and one label per object fixed the pliers; for the video we replay stock footage through the same pipeline. The benchmark is in our friction log (#12).
 
 ## Accomplishments
 - A voice answer grounded in evidence: every answer cites a ledger row and has a clip behind it.
@@ -53,7 +54,7 @@ ChronoGrid turns an on-device camera into an append-only **ledger** of what was 
 MCP is a good fit for ambient assistants: long-lived state lives in the server and any assistant can borrow it. Keeping the LLM on the language side of a deterministic boundary is what makes a safety feature believable.
 
 ## What's next
-Ring camera ingestion via the Ring APIs, testing ChronoGrid TV on a real Fire TV Stick, multi-camera homes, and a caregiver mode with family-approved rules.
+Ring camera ingestion via the Ring APIs, testing ChronoGrid TV on a real Fire TV Stick, multi-camera homes, a caregiver mode with family-approved rules, and better tool recognition (a short fine-tune on the household's own objects, or a Nova second opinion on the object crop when a placement is detected).
 
 ## Built with
 python, fastapi, mcp, mcp-apps, strands-agents, amazon-bedrock, amazon-bedrock-agentcore, amazon-nova, amazon-polly, amazon-s3, aws-cdk, vega, react-native, fire-tv, cloudflare-tunnel, yolo-world, opencv, ffmpeg, react, vite, typescript, sqlite, wsl

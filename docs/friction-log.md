@@ -106,3 +106,21 @@ Severity: **S1** blocks progress · **S2** costs significant time or forces a de
 - **Severity:** S2 (silent data loss with standard WebSocket code)
 - **Workaround:** Buffer chunks until the text parses as JSON (`tv/src/api.ts`).
 - **Suggestion:** Deliver whole messages, as the WebSocket API specifies, or document the frame size limit.
+
+### 12. Edge vision: YOLO-World on a live laptop webcam couldn't name our hand tools
+- **Tool:** YOLO-World v2 (`ultralytics`), all three sizes we could run on a laptop CPU: `yolov8s-worldv2`, `yolov8m-worldv2`, `yolov8l-worldv2`
+- **Task:** Record our own clips: a phone, red-handled pliers, a black screwdriver and a wooden-handled lump hammer laid on a white table, filmed live by the laptop webcam (640x480) in a dim room at night.
+- **Actual:** Only the phone was labelled reliably. Live, with the original small model and plain words, the pliers and the hammer came out as **"scissors"** and the screwdriver was never labelled. We then benchmarked one still of the table across models, wordings and input sizes (`scripts/bench_detector.py`):
+
+  | Model (CPU time per frame) | Phone | Pliers | Screwdriver | Hammer |
+  | --- | --- | --- | --- | --- |
+  | small, plain words (~0.2 s) | ✓ | "scissors" | missed | "scissors" |
+  | small, wordier prompts | ✓ "smartphone" 0.59 | "red pliers" 0.30, but "scissors" 0.23 on the same object | "smartphone" 0.19 (wrong) | "hammer with wooden handle" 0.16 |
+  | medium, wordier prompts (~0.4 s) | ✓ 0.71 | ✓ "red pliers" 0.45 | ✓ but weak, 0.11 | missed; the hammer prompt fired on the pliers (0.19) and screwdriver (0.14) instead |
+  | large, plain words (~0.8 s) | ✓ | "pliers" 0.12 vs "scissors" 0.11 | ✓ 0.19 | missed; "mug" 0.41 on a chair in the background |
+  | large, wordier prompts | ✓ | ✓ "red pliers" 0.56 | hammer prompt 0.37 (wrong) | hammer prompt 0.22 on the hammer, but 0.39 on the pliers |
+
+  A larger input (960 px) roughly doubled the time without helping (the medium model's phone score fell from 0.71 to 0.17). No combination labelled all four tools, and the hammer was never the top label on the hammer. 16 Pexels stock clips told the same story with the medium model: phones, mugs and real scissors were right, but pliers and hammers came out as "scissors" (up to 0.85), a hammer as "pliers" (0.42), keys as "phone" (0.36) and a screwdriver as "scissors".
+- **Severity:** S2 (we couldn't record our own props for the demo)
+- **Workaround:** The edge now defaults to the medium model, lets a wordier prompt record a plain label (`"red pliers=pliers"`), keeps one label per object (class-agnostic NMS) and gives thin tools a lower confidence bar. For the demo video we replay the stock clips that were labelled correctly through the unchanged edge pipeline (`edge.run --source clip.mp4`, one vocabulary per shot); every label, clip and S3 upload in the video is produced live by ChronoGrid.
+- **Suggestion:** For tools, open-vocabulary models need better light, a closer camera, a short fine-tune on the household's own objects, or a second opinion from a multimodal model on the object crop when a placement is detected.
