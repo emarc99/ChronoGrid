@@ -11,7 +11,7 @@ Select every one that applies; a project can win at most one track and one mini 
 - **Mini challenge, Open Source:** MIT-licensed, public repository
 
 ## How judges can test it
-No camera, Alexa+ device or Fire TV is required; `.\scripts\run.ps1 -Seed` loads a day of workshop history.
+No camera, Alexa+ device or Fire TV is required; `.\scripts\run.ps1 -Seed` (macOS/Linux: `./scripts/run.sh --seed`) loads a day of workshop history.
 1. **MCP only, no AWS account:** connect MCP Inspector, Claude Desktop, VS Code or Cursor to `http://127.0.0.1:8787/mcp` and call `where_is`, `room_diff` or `room_status`.
 2. **Full Alexa+ flow:** with AWS credentials (Bedrock in `us-east-1`), open `http://127.0.0.1:8787` and talk or type.
 3. **Fire TV:** `scripts/vega/` builds and installs ChronoGrid TV on the Vega Virtual Device.

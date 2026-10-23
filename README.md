@@ -73,7 +73,7 @@ More detail: [docs/architecture.md](docs/architecture.md) · AWS usage: [docs/aw
 ## Try it (for judges)
 No camera, Fire TV or Alexa+ device is needed: `-Seed` loads a believable day of workshop history. Seeded events have no video, so their rewind shows the zone map; events the camera records carry a real clip. See [seed versus real history](docs/architecture.md#2-the-camera-builds-the-real-history-the-seed-is-only-a-demo).
 
-1. **The MCP server alone (no AWS account):** run `.\scripts\run.ps1 -Seed`, then point any MCP host at `http://127.0.0.1:8787/mcp`, for example `npx @modelcontextprotocol/inspector` (transport: Streamable HTTP). Call `where_is {"object": "safety goggles"}`, `room_diff {"zone": "workbench"}` or `room_status`. Claude Desktop, VS Code and Cursor also render the rewind **MCP App**.
+1. **The MCP server alone (no AWS account):** run `.\scripts\run.ps1 -Seed` (macOS/Linux: `./scripts/run.sh --seed`), then point any MCP host at `http://127.0.0.1:8787/mcp`, for example `npx @modelcontextprotocol/inspector` (transport: Streamable HTTP). Call `where_is {"object": "safety goggles"}`, `room_diff {"zone": "workbench"}` or `room_status`. Claude Desktop, VS Code and Cursor also render the rewind **MCP App**.
 2. **The full Alexa+ experience (AWS credentials with Bedrock in `us-east-1`):** open http://127.0.0.1:8787, type or hold Space and say "Where did I leave my safety goggles?", then "Warn me if the soldering iron is on and nobody's at the bench for 20 seconds", "approve it", and press **H** to switch the iron on.
 3. **Fire TV:** see [Run ChronoGrid TV](#run-chronogrid-tv-on-fire-tv-vega) (Vega SDK on macOS/Ubuntu, or WSL2 on Windows).
 
@@ -92,7 +92,7 @@ copy .env.example .env                          # optionally set CHRONOGRID_S3_B
 
 Open **http://127.0.0.1:8787**. Hold **Space** to talk (Chrome/Edge), or type. Arrow keys move around the ChronoGrid, **Enter** opens a rewind, **Esc** goes back, **S** snoozes an alert, and **H** toggles the demo "soldering iron" smart plug.
 
-macOS/Linux: `python -m seed.seed && python -m server.api`, and build the UI once with `cd web && npm install && npm run build`.
+macOS/Linux: `cp .env.example .env && ./scripts/run.sh --seed` does the same (it creates `.venv` if needed). Every script in `scripts/` has a bash twin: `run.ps1` / `run.sh` and `tunnel.ps1` / `tunnel.sh`. The Vega scripts in `scripts/vega/` are bash only, since the Vega SDK runs on Linux (WSL2 on Windows) and macOS.
 
 ### Add the edge camera
 ```powershell
@@ -123,6 +123,7 @@ cd ..\..; .\scripts\tunnel.ps1                                        # exposes 
 # .env: CHRONOGRID_AGENT_RUNTIME_ARN=<arn>, CHRONOGRID_MCP_TOKEN=<random>
 .\scripts\run.ps1
 ```
+macOS/Linux: `./scripts/tunnel.sh` and `./scripts/run.sh` (the tunnel script downloads `cloudflared` on Linux; on macOS run `brew install cloudflared` first).
 Details: [docs/aws-integration.md](docs/aws-integration.md#alexa-brain-on-agentcore).
 
 ### Run ChronoGrid TV on Fire TV (Vega)

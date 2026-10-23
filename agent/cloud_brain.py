@@ -60,7 +60,7 @@ class CloudBrain:
     def ask(self, utterance: str) -> dict[str, Any]:
         base = self.public_url()
         if not base:
-            raise RuntimeError("no public URL for the MCP server; start scripts/tunnel.ps1")
+            raise RuntimeError("no public URL for the MCP server; start scripts/tunnel.ps1 (or tunnel.sh)")
         payload = {
             "prompt": utterance,
             "mcp_url": f"{base}/mcp",

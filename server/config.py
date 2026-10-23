@@ -42,7 +42,7 @@ class Settings:
 
     @property
     def public_url(self) -> str | None:
-        """HTTPS URL that reaches this server from the cloud (written by scripts/tunnel.ps1)."""
+        """HTTPS URL that reaches this server from the cloud (written by scripts/tunnel.ps1 or tunnel.sh)."""
         url = os.environ.get("CHRONOGRID_PUBLIC_URL")
         marker = self.db_path.parent / "public_url.txt"
         if not url and marker.exists():

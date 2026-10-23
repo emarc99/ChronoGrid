@@ -52,6 +52,8 @@ Then run the household side:
 #       CHRONOGRID_MCP_TOKEN=<random 40 chars>
 .\scripts\run.ps1
 ```
+On macOS/Linux use `./scripts/tunnel.sh` and `./scripts/run.sh`.
+
 An idle runtime session gets recycled, and a fresh microVM took up to about 45 s to answer in testing. While the server runs, `CloudBrain` sends a `{"warmup": true}` payload every 4 minutes on the household's session; the runtime answers it without calling the model. The MCP endpoint is **stateless** Streamable HTTP, so the runtime's cached MCP connection keeps working when the home server restarts.
 
 Without `CHRONOGRID_AGENT_RUNTIME_ARN`, the same agent runs in-process ([`agent/alexa_agent.py`](../agent/alexa_agent.py)), so the project still works offline from AWS.

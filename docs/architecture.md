@@ -44,7 +44,7 @@ The server turns those events into the "git log":
 | Video clip | None (screens show the zone map) | Yes, about 5 s, faces blurred |
 | Purpose | A lived-in heatmap, history, diffs and rules for demos and for judges without a camera | The real record, with video evidence |
 
-Both go into the same ledger and can sit side by side. In production you skip the demo history: run `python -m seed.seed --keep` once to load only the zones and default rules, start with `run.ps1` (no `-Seed`, no demo reset), and the history grows from what the camera sees. The one setup step is redrawing the zone outlines in [`seed/zones.json`](../seed/zones.json) (polygons in fractions of the camera picture) to match where your camera points.
+Both go into the same ledger and can sit side by side. In production you skip the demo history: run `python -m seed.seed --keep` once to load only the zones and default rules, start with `run.ps1` or `run.sh` (no seed flag, no demo reset), and the history grows from what the camera sees. The one setup step is redrawing the zone outlines in [`seed/zones.json`](../seed/zones.json) (polygons in fractions of the camera picture) to match where your camera points.
 
 **Order matters for demos:** `/api/demo/reset` deletes **all** events, camera ones included, and reseeds. The clip files stay on disk and in S3, but the ledger no longer points to them. Reset first, then start the camera and record.
 
