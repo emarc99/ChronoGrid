@@ -103,8 +103,24 @@ export function useScreenSocket(onMessage: (msg: ScreenMessage) => void, onStatu
     let closed = false;
     const connect = () => {
       ws = new WebSocket(WS_URL);
+      // Vega's WebSocket can deliver one large text message as several onmessage chunks,
+      // so keep appending until the text parses as a whole JSON message.
+      let partial = '';
       ws.onopen = () => status.current(true);
-      ws.onmessage = (e) => handler.current(JSON.parse(String(e.data)));
+      ws.onmessage = (e) => {
+        partial += String(e.data);
+        let msg: ScreenMessage;
+        try {
+          msg = JSON.parse(partial);
+        } catch {
+          if (!partial.startsWith('{') || partial.length > 1_000_000) {
+            partial = '';
+          }
+          return;
+        }
+        partial = '';
+        handler.current(msg);
+      };
       ws.onerror = () => ws?.close();
       ws.onclose = () => {
         status.current(false);
