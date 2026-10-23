@@ -83,15 +83,26 @@ Severity: **S1** blocks progress · **S2** costs significant time or forces a de
 - **Tool:** Vega Virtual Device (same setup as #7), shown through WSLg on Windows 11
 - **Task:** ChronoGrid TV redraws when a WebSocket push arrives (someone asks Alexa a question), with no remote input.
 - **Expected:** The new screen shows up as soon as the app renders it.
-- **Actual:** The guest renders (our app logs the new state), but the "Vega Virtual Device" window keeps showing the old frame until the real mouse moves over the TV picture. Moving over the remote panel does nothing. Synthetic `WM_MOUSEMOVE`/`SetCursorPos` doesn't help either, and a background `SendInput` nudger only worked some of the time. We spent about two hours chasing what looked like an app bug (message size, animation loops, the media component) before finding out it was the display path.
+- **Actual:** The guest renders (our app logs the new state), but the "Vega Virtual Device" window keeps showing the old frame until the real mouse moves over the TV picture. Moving over the remote panel does nothing. Synthetic `WM_MOUSEMOVE`/`SetCursorPos` doesn't help either, and a background `SendInput` nudger only worked some of the time. We spent about two hours chasing what looked like an app bug (animation loops, the media component) before finding out it was the display path. A video surface makes it worse: its last frame can stay on screen after the app has already moved on, so a screenshot may show video that isn't playing any more. Minimizing and restoring the window forces a full redraw.
 - **Severity:** S2 (any push-driven or ambient TV app looks broken in the simulator)
 - **Workaround:** Move the mouse over the TV picture after each update. We do that while recording the demo.
 - **Suggestion:** Make the VVD present frames on its own timer, or document the quirk under "Known issues" for WSL hosts.
 
 ### 10. Fire TV: W3C Media clip playback on the Vega Virtual Device
-- **Tool:** `@amazon-devices/react-native-w3cmedia` on the VVD
-- **Task:** Play the 5-second MP4 "rewind" clip inside ChronoGrid TV.
-- **Actual:** The VVD logs a crash loop in the system `stem-init` service, and while #9 was still unknown we couldn't tell whether playback was failing or just not repainting. After a 90-minute timebox we went back to the map-only TV view.
+- **Tool:** `@amazon-devices/react-native-w3cmedia` 2.3.4-rn-83 on the VVD
+- **Task:** Loop the 5-second MP4 "rewind" clip inside ChronoGrid TV.
+- **Actual:** It works, after three surprises (and a first attempt we abandoned because #9 hid the result):
+  1. The build reports an `ERROR` that the library version "is not part of its `kepler-compatibility.json`", yet the app builds, installs and plays. It's only a warning, but it reads like a hard failure.
+  2. Playing a second clip after leaving the first failed with `gst_kepler_video_sink_change_state ... Failed to create session ID`: the previous player was still tearing down. We now wait for the old player's `deinitialize()` before creating a new one.
+  3. `loadedmetadata` never reached our listener, so we poll `videoWidth`/`videoHeight` to place the bounding box over the letterboxed video.
 - **Severity:** S3
-- **Workaround:** The real clip plays on the Alexa+ ambient screen and in the MCP App (`ui://chronogrid/rewind`). The TV shows the map, the history and the clip caption.
-- **Suggestion:** A minimal "play an MP4 on the VVD" sample, along with the VVD media capabilities, would save a lot of guessing.
+- **Workaround:** As above; the TV falls back to the zone map if playback errors.
+- **Suggestion:** A minimal "play an MP4 on the VVD" sample that switches between clips, and a note on releasing a player before creating the next.
+
+### 11. Fire TV: a large WebSocket message arrives as several `onmessage` events
+- **Tool:** React Native for Vega `WebSocket` on the VVD
+- **Task:** Receive a ~3 KB JSON screen update (it carries a presigned S3 URL) from our server.
+- **Actual:** The app got two `onmessage` events, neither of which was valid JSON (`JSON Parse error: Unexpected end of input`, then `Unexpected character: e`). Browsers always deliver a complete text message per event, so the TV silently ignored every rewind that had a clip.
+- **Severity:** S2 (silent data loss with standard WebSocket code)
+- **Workaround:** Buffer chunks until the text parses as JSON (`tv/src/api.ts`).
+- **Suggestion:** Deliver whole messages, as the WebSocket API specifies, or document the frame size limit.
