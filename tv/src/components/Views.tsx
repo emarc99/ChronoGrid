@@ -1,7 +1,8 @@
-import React, {useEffect, useRef} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {Animated, StyleSheet, Text, View} from 'react-native';
 import type {LedgerEvent, Rule, Zone} from '../api';
 import {clock, colors, mono} from '../theme';
+import {ClipPlayer} from './ClipPlayer';
 import {FocusButton} from './FocusButton';
 
 const FRAME_W = 880;
@@ -13,7 +14,21 @@ function bounds(poly: [number, number][]) {
   return {x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys)};
 }
 
-function Pulse({bbox, label}: {bbox: [number, number, number, number]; label: string}) {
+type Area = {left: number; top: number; width: number; height: number};
+const FULL_FRAME: Area = {left: 0, top: 0, width: FRAME_W, height: FRAME_H};
+
+/** Where a video of this size lands inside the frame when scaled to fit (letterboxed). */
+function fitted(width: number, height: number): Area {
+  const scale = Math.min(FRAME_W / width, FRAME_H / height);
+  const w = width * scale;
+  const h = height * scale;
+  return {left: (FRAME_W - w) / 2, top: (FRAME_H - h) / 2, width: w, height: h};
+}
+
+// Webcams record 4:3; the Vega Virtual Device doesn't always report the decoded size.
+const DEFAULT_CLIP = fitted(4, 3);
+
+function Pulse({bbox, label, area}: {bbox: [number, number, number, number]; label: string; area: Area}) {
   const glow = useRef(new Animated.Value(0.35)).current;
   useEffect(() => {
     const loop = Animated.loop(
@@ -30,24 +45,40 @@ function Pulse({bbox, label}: {bbox: [number, number, number, number]; label: st
     <Animated.View
       style={[
         styles.bbox,
-        {left: x1 * FRAME_W, top: y1 * FRAME_H, width: (x2 - x1) * FRAME_W, height: (y2 - y1) * FRAME_H, opacity: glow},
+        {
+          left: area.left + x1 * area.width,
+          top: area.top + y1 * area.height,
+          width: (x2 - x1) * area.width,
+          height: (y2 - y1) * area.height,
+          opacity: glow,
+        },
       ]}>
       <Text style={styles.bboxLabel}>{label}</Text>
     </Animated.View>
   );
 }
 
-/** Spatial rewind: where the object was put down, drawn on the camera's zone map. */
+/** Rewind: the 5-second placement clip when there is one, otherwise the camera's zone map. */
 export const RewindView = ({data, zones}: {data: any; zones: Zone[]}) => {
   const history: any[] = data.history ?? [];
+  const [clipFailed, setClipFailed] = useState(false);
+  const [videoArea, setVideoArea] = useState<Area | null>(null);
+  const onClipError = useCallback(() => setClipFailed(true), []);
+  const onClipSize = useCallback((w: number, h: number) => setVideoArea(fitted(w, h)), []);
+  useEffect(() => {
+    setClipFailed(false);
+    setVideoArea(null);
+  }, [data.clip_url]);
+  const playing = Boolean(data.clip_url) && !clipFailed;
   return (
     <View style={styles.panel}>
       <Text style={styles.title}>
         git log · <Text style={styles.accent}>{data.object ?? data.label}</Text>
       </Text>
       <View style={styles.split}>
-        <View style={styles.frame}>
-          {zones.map((z) => {
+        <View style={[styles.frame, playing && styles.frameVideo]}>
+          {playing && <ClipPlayer url={data.clip_url} onError={onClipError} onSize={onClipSize} />}
+          {!playing && zones.map((z) => {
             const b = bounds(z.polygon);
             const hit = z.id === data.zone_id;
             return (
@@ -62,7 +93,9 @@ export const RewindView = ({data, zones}: {data: any; zones: Zone[]}) => {
               </View>
             );
           })}
-          {data.bbox && <Pulse bbox={data.bbox} label={data.object ?? ''} />}
+          {data.bbox && (
+            <Pulse bbox={data.bbox} label={data.object ?? ''} area={playing ? videoArea ?? DEFAULT_CLIP : FULL_FRAME} />
+          )}
           <Text style={styles.stamp}>{data.ts ? `${clock(data.ts)} · camera 1` : 'camera 1'}</Text>
         </View>
         <View style={styles.side}>
@@ -76,7 +109,9 @@ export const RewindView = ({data, zones}: {data: any; zones: Zone[]}) => {
               </Text>
             </View>
           ))}
-          <Text style={styles.muted}>5-second clip saved privately in S3 · faces blurred on-device</Text>
+          <Text style={styles.muted}>
+            {playing ? 'Looping the 5-second clip · ' : ''}saved privately in S3 · faces blurred on-device
+          </Text>
         </View>
       </View>
     </View>
@@ -256,6 +291,7 @@ const styles = StyleSheet.create({
     borderColor: colors.panelEdge,
     overflow: 'hidden',
   },
+  frameVideo: {backgroundColor: '#000'},
   zone: {position: 'absolute', borderWidth: 2, borderColor: '#2b3746', borderRadius: 8, padding: 8},
   zoneHit: {borderColor: colors.accent, backgroundColor: 'rgba(62,224,176,0.08)'},
   zoneName: {color: colors.muted, fontSize: 18},
