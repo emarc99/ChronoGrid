@@ -121,6 +121,28 @@ The YouTube URL, once uploaded.
 | Friction log URL | `https://github.com/emarc99/ChronoGrid/blob/main/docs/friction-log.md` |
 | Project testing link | `https://github.com/emarc99/ChronoGrid#try-it-for-judges` |
 
+### Testing instructions or credentials
+```
+No credentials are needed and none are shared: ChronoGrid runs on your machine. No camera, Alexa+ device or Fire TV is required; the seed loads a day of workshop history. Full guide: https://github.com/emarc99/ChronoGrid#try-it-for-judges
+
+Setup (Python 3.11+, Node 18+):
+  git clone https://github.com/emarc99/ChronoGrid.git && cd ChronoGrid
+  python -m venv .venv
+  .venv/bin/pip install -e ".[dev]"      (Windows: .\.venv\Scripts\pip)
+  cp .env.example .env                    (Windows: copy)
+  ./scripts/run.sh --seed                 (Windows: .\scripts\run.ps1 -Seed)
+
+1. MCP server only, no AWS account: run "npx @modelcontextprotocol/inspector", choose Streamable HTTP, connect to http://127.0.0.1:8787/mcp and call where_is {"object": "safety goggles"}, room_diff {"zone": "workbench"} or room_status. Claude Desktop, VS Code and Cursor also render the rewind MCP App.
+
+2. Full Alexa+ flow (your own AWS credentials with Bedrock Nova 2 Lite and Polly in us-east-1): open http://127.0.0.1:8787, type or hold Space and say "Where did I leave my safety goggles?", then "Warn me if the soldering iron is on and nobody's at the bench for 20 seconds", "approve it", and press H to switch the iron on; the hazard card and spoken warning follow about 20 s later. Without an AgentCore runtime ARN the same Strands agent runs in-process; deploying the AgentCore version is documented in docs/aws-integration.md.
+
+3. Camera events with real clips (optional): .venv/bin/pip install -e ".[edge]", then python -m edge.run --source any-video.mp4 (or a webcam). Objects that stay put become "placed" events with a 5-second face-blurred clip you can then ask about.
+
+4. Fire TV (optional): scripts/vega/ builds and installs ChronoGrid TV on the Vega Virtual Device (Vega SDK on macOS/Ubuntu, or WSL2 on Windows); see "Run ChronoGrid TV" in the README.
+
+Tests: pytest (26 tests).
+```
+
 ### AWS Builder: which AWS services did you incorporate and how?
 ```
 ChronoGrid's Alexa+ brain runs on AWS; the full write-up with code links is in docs/aws-integration.md (https://github.com/emarc99/ChronoGrid/blob/main/docs/aws-integration.md).
