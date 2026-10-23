@@ -51,6 +51,23 @@ def _stamp(frame: np.ndarray, ts: float) -> np.ndarray:
     return frame
 
 
+def resample(frames: list[tuple[float, np.ndarray]], fps: int) -> list[int]:
+    """Indices of the frame showing at each output tick, so the clip lasts as long as the moment it covers.
+
+    The buffer fills at whatever rate the detection loop allows (2-3 fps on a busy CPU), so encoding the
+    raw frames at a fixed rate would play the moment back several times too fast.
+    """
+    t0, t1 = frames[0][0], frames[-1][0]
+    ticks = max(1, round((t1 - t0) * fps) + 1)
+    out, j = [], 0
+    for i in range(ticks):
+        t = t0 + i / fps
+        while j + 1 < len(frames) and frames[j + 1][0] <= t:
+            j += 1
+        out.append(j)
+    return out
+
+
 def write_clip(frames: list[tuple[float, np.ndarray]], path: Path, fps: int = 12) -> Path:
     """Encode frames to an H.264 MP4 that plays in browsers, Echo Show and Fire TV."""
     import imageio_ffmpeg
@@ -67,9 +84,12 @@ def write_clip(frames: list[tuple[float, np.ndarray]], path: Path, fps: int = 12
     ]
     path.parent.mkdir(parents=True, exist_ok=True)
     proc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    for ts, frame in frames:
-        frame = _stamp(blur_faces(frame[:h, :w].copy()), ts)
-        proc.stdin.write(frame.tobytes())
+    last, data = -1, b""
+    for i in resample(frames, fps):
+        if i != last:
+            ts, frame = frames[i]
+            last, data = i, _stamp(blur_faces(frame[:h, :w].copy()), ts).tobytes()
+        proc.stdin.write(data)
     proc.stdin.close()
     if proc.wait() != 0:
         raise RuntimeError("ffmpeg failed to encode clip")
