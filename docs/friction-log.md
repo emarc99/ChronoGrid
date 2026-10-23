@@ -78,3 +78,20 @@ Severity: **S1** blocks progress · **S2** costs significant time or forces a de
   4. The first deploy took about 8.5 minutes (CDK bootstrap plus stack), with no indication of which step was slow.
 - **Severity:** S3
 - **Suggestion:** Check for `uv` up front with an install hint, add a migration note at the top of the starter-toolkit README, and show per-resource progress during the first deploy.
+
+### 9. Fire TV: the Vega Virtual Device window under WSLg only repaints while the mouse moves over it
+- **Tool:** Vega Virtual Device (same setup as #7), shown through WSLg on Windows 11
+- **Task:** ChronoGrid TV redraws when a WebSocket push arrives (someone asks Alexa a question), with no remote input.
+- **Expected:** The new screen shows up as soon as the app renders it.
+- **Actual:** The guest renders (our app logs the new state), but the "Vega Virtual Device" window keeps showing the old frame until the real mouse moves over the TV picture. Moving over the remote panel does nothing. Synthetic `WM_MOUSEMOVE`/`SetCursorPos` doesn't help either, and a background `SendInput` nudger only worked some of the time. We spent about two hours chasing what looked like an app bug (message size, animation loops, the media component) before finding out it was the display path.
+- **Severity:** S2 (any push-driven or ambient TV app looks broken in the simulator)
+- **Workaround:** Move the mouse over the TV picture after each update. We do that while recording the demo.
+- **Suggestion:** Make the VVD present frames on its own timer, or document the quirk under "Known issues" for WSL hosts.
+
+### 10. Fire TV: W3C Media clip playback on the Vega Virtual Device
+- **Tool:** `@amazon-devices/react-native-w3cmedia` on the VVD
+- **Task:** Play the 5-second MP4 "rewind" clip inside ChronoGrid TV.
+- **Actual:** The VVD logs a crash loop in the system `stem-init` service, and while #9 was still unknown we couldn't tell whether playback was failing or just not repainting. After a 90-minute timebox we went back to the map-only TV view.
+- **Severity:** S3
+- **Workaround:** The real clip plays on the Alexa+ ambient screen and in the MCP App (`ui://chronogrid/rewind`). The TV shows the map, the history and the clip caption.
+- **Suggestion:** A minimal "play an MP4 on the VVD" sample, along with the VVD media capabilities, would save a lot of guessing.
