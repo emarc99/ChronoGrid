@@ -137,6 +137,8 @@ wsl -e bash -l scripts/vega/tv-deploy.sh                                   # bui
 ```
 The app reaches the server at `http://10.0.2.2:8787` (the emulator's host alias); change [`tv/src/config.ts`](tv/src/config.ts) for a real Fire TV.
 
+**No build needed:** a prebuilt package for the Vega Virtual Device is on the [tv-v0.1.0 release](https://github.com/emarc99/ChronoGrid/releases/tag/tv-v0.1.0). Start the server and the VVD (`vega virtual-device start`), then `vega run-app chronotv_x86_64.vpkg com.emarc99.chronotv.main -d VirtualDevice`.
+
 ## Tests
 ```powershell
 .\.venv\Scripts\python -m pytest -q

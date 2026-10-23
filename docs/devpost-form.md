@@ -104,6 +104,8 @@ The YouTube URL, once uploaded.
 
 ## Page 3: Additional info
 
+**Upload a File:** `C:\Users\LENOVO\Documents\devposts\ChronoGridTV-vvd-x86_64.zip` (prebuilt ChronoGrid TV for the Vega Virtual Device, 189 KB; same file as the [tv-v0.1.0 release](https://github.com/emarc99/ChronoGrid/releases/tag/tv-v0.1.0)).
+
 | Field | Answer |
 | --- | --- |
 | Submitter type | Individual |
@@ -138,7 +140,14 @@ Setup (Python 3.11+, Node 18+):
 
 3. Camera events with real clips (optional): .venv/bin/pip install -e ".[edge]", then python -m edge.run --source any-video.mp4 (or a webcam). Objects that stay put become "placed" events with a 5-second face-blurred clip you can then ask about.
 
-4. Fire TV (optional): scripts/vega/ builds and installs ChronoGrid TV on the Vega Virtual Device (Vega SDK on macOS/Ubuntu, or WSL2 on Windows); see "Run ChronoGrid TV" in the README.
+4. Fire TV track, ChronoGrid TV on the Vega Virtual Device (Vega SDK on macOS/Ubuntu, or WSL2 on Windows):
+   - Prebuilt package (no build needed): download ChronoGridTV-vvd-x86_64.zip from https://github.com/emarc99/ChronoGrid/releases/tag/tv-v0.1.0 (also attached to this submission), then:
+       vega virtual-device start
+       vega run-app chronotv_x86_64.vpkg com.emarc99.chronotv.main -d VirtualDevice
+   - Or build from source: scripts/vega/tv-deploy.sh (see "Run ChronoGrid TV" in the README).
+   - Keep the server from the setup running on the same machine; the TV reaches it at http://10.0.2.2:8787 (the emulator's alias for the host; edit tv/src/config.ts for a real Fire TV).
+   - Try it: D-pad across the heatmap (zones by hour), OK on a busy cell opens the rewind, left/right steps through the object's history, Back closes. Then ask a question on the web screen ("Where are the scissors?") and the TV jumps to the rewind on its own; approve a rule pull request or snooze a hazard with OK.
+   - On Windows/WSLg the VVD window only repaints while the mouse moves over the TV picture; wiggle the mouse (friction log #9).
 
 Tests: pytest (26 tests).
 ```
