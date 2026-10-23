@@ -10,6 +10,15 @@
 | **Amazon Bedrock AgentCore Memory** | [`cloud/ChronoGridAlexa/app/AlexaBrain/memory/session.py`](../cloud/ChronoGridAlexa/app/AlexaBrain/memory/session.py) | Long-term memory for the household (`actor_id = household`), with four strategies: **semantic** facts, **user preferences** (how they name things, how long rules should wait), **session summaries**, and **episodic** memory. Wired in through Strands' `AgentCoreMemorySessionManager`. Object locations still come only from MCP tools, never from memory. |
 | **AWS CDK / CloudFormation, CloudWatch** | [`cloud/ChronoGridAlexa/agentcore/`](../cloud/ChronoGridAlexa/agentcore/) | `agentcore deploy` synthesizes a CDK stack (runtime, memory, least-privilege execution role) and ships the agent as a CodeZip artifact. Runtime logs and traces land in CloudWatch (transaction search enabled). |
 
+## Deployed resources (us-east-1)
+All three are tagged `Project=ChronoGrid`, `Hackathon=amazonappdev2026`, `Repo=github.com/emarc99/ChronoGrid`, so they can be found with a tag search in the account.
+
+| Resource | Name |
+| --- | --- |
+| AgentCore Runtime (the Alexa+ brain) | `ChronoGridAlexa_AlexaBrain-mCWMTa5e5J` (CloudFormation stack `AgentCore-ChronoGridAlexa-default`) |
+| AgentCore Memory (household memory) | `ChronoGridAlexa_AlexaBrainMemory-eKBPxdH4Bk` |
+| S3 bucket (clips and sessions) | `chronogrid-clips-<account-id>` |
+
 ## Setup used
 ```powershell
 $b = "chronogrid-clips-<account-id>"
