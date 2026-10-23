@@ -82,6 +82,9 @@ async def invoke(payload: dict[str, Any], context) -> dict[str, Any]:
     actor_id = payload.get("household", "household")
     agent, trace = _agent_for(session_id, actor_id, mcp_url, payload.get("mcp_token"))
     agent.system_prompt = SYSTEM_PROMPT.format(now=payload.get("now", "unknown"))
+    # Each utterance starts from an empty transcript: with earlier answers in context the model repeats
+    # them (stale times, and no tool call to drive the screen). Long-term memory is still retrieved.
+    agent.messages.clear()
     trace.clear()
     log.info("utterance: %s", prompt)
     result = await agent.invoke_async(prompt)
