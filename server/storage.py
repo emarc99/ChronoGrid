@@ -24,6 +24,23 @@ class ClipStore:
             import boto3
 
             self._s3 = boto3.client("s3", region_name=region)
+            # a mirror can be cut short by a restart, so serve local copies until S3 is known to have them
+            self._local_only = {p.name for p in self.clips_dir.glob("*.mp4")}
+            threading.Thread(target=self._reconcile, daemon=True).start()
+
+    def _reconcile(self) -> None:
+        try:
+            remote: set[str] = set()
+            for page in self._s3.get_paginator("list_objects_v2").paginate(Bucket=self.bucket, Prefix="clips/"):
+                remote.update(o["Key"].removeprefix("clips/") for o in page.get("Contents", []))
+        except Exception:
+            log.exception("Could not list S3 clips; serving them locally")
+            return
+        for key in sorted(self._local_only):
+            if key in remote:
+                self._local_only.discard(key)
+            else:
+                self._mirror(key, (self.clips_dir / key).read_bytes(), "video/mp4")
 
     def save(self, name: str, data: bytes, content_type: str = "video/mp4") -> str:
         key = _SAFE.sub("_", Path(name).name)
