@@ -49,7 +49,8 @@ Cameras already record terabytes of footage nobody watches. ChronoGrid turns tha
 flowchart LR
   Cam["Webcam / Ring-style camera"] --> Edge["Edge: YOLO-World + placement tracker (on-device)"]
   Edge -->|events| Ledger[("SQLite ledger (append-only)")]
-  Edge -->|"face-blurred H.264 clips"| S3["Amazon S3 (presigned, 7-day expiry)"]
+  Edge -->|"face-blurred H.264 clips"| Clips["Clip store (data/clips, local first)"]
+  Clips -->|"background mirror"| S3["Amazon S3 (private, presigned, 7-day expiry)"]
   Ledger --> MCP["ChronoGrid MCP server (2025-11-25, Streamable HTTP)"]
   Ledger --> Linter["ChronoLint daemon (deterministic)"]
   Alexa["Alexa+ brain: Strands agent on AgentCore Runtime (Nova 2 Lite)"] -->|"MCP client via tunnel + bearer token"| MCP
@@ -63,14 +64,14 @@ flowchart LR
 
 - **One process** (`server/api.py`) serves the MCP endpoint at `/mcp`, REST at `/api`, the screen WebSocket at `/ws`, the MCP App at `/apps`, and the web UI.
 - The **Strands agent** connects to `/mcp` as a regular MCP client, exactly as Alexa+ connects to a self-hosted MCP server, so the same server works with Alexa+, Claude, VS Code or any MCP host. In production it runs on **Amazon Bedrock AgentCore Runtime** with **AgentCore Memory** and reaches the home server through a tunnel that exposes only `/mcp`, behind a bearer token. Without AWS it runs in-process.
-- **ChronoGrid TV** is a native React Native for Vega app for Fire TV. It subscribes to the same WebSocket, so asking Alexa+ "where are my keys?" jumps the TV to the rewind view, a hazard slides in as an alert card, and rule PRs are approved with the remote's OK button.
+- **ChronoGrid TV** is a native React Native for Vega app for Fire TV. It subscribes to the same WebSocket, so asking Alexa+ "where are my goggles?" jumps the TV to the rewind view and loops the real clip (W3C Media), a hazard slides in as an alert card, and rule PRs are approved with the remote's OK button.
 - **Deterministic boundary:** every tool returns a `say` sentence built from ledger rows. The model is told to speak it rather than invent times or places. Alerts come from `server/rules.py`, never from the LLM.
 - **Privacy:** detection runs locally; only events (labels and boxes) and short clips with blurred faces leave the device. Presence is tracked, identity is not. Clips expire after 7 days.
 
 More detail: [docs/architecture.md](docs/architecture.md) · AWS usage: [docs/aws-integration.md](docs/aws-integration.md)
 
 ## Try it (for judges)
-No camera, Fire TV or Alexa+ device is needed: `-Seed` loads a believable day of workshop history.
+No camera, Fire TV or Alexa+ device is needed: `-Seed` loads a believable day of workshop history. Seeded events have no video, so their rewind shows the zone map; events the camera records carry a real clip. See [seed versus real history](docs/architecture.md#2-the-camera-builds-the-real-history-the-seed-is-only-a-demo).
 
 1. **The MCP server alone (no AWS account):** run `.\scripts\run.ps1 -Seed`, then point any MCP host at `http://127.0.0.1:8787/mcp`, for example `npx @modelcontextprotocol/inspector` (transport: Streamable HTTP). Call `where_is {"object": "safety goggles"}`, `room_diff {"zone": "workbench"}` or `room_status`. Claude Desktop, VS Code and Cursor also render the rewind **MCP App**.
 2. **The full Alexa+ experience (AWS credentials with Bedrock in `us-east-1`):** open http://127.0.0.1:8787, type or hold Space and say "Where did I leave my safety goggles?", then "Warn me if the soldering iron is on and nobody's at the bench for 20 seconds", "approve it", and press **H** to switch the iron on.
@@ -98,7 +99,12 @@ macOS/Linux: `python -m seed.seed && python -m server.api`, and build the UI onc
 .\.venv\Scripts\pip install -e ".[edge]"
 .\.venv\Scripts\python -m edge.run                 # webcam 0; or --source demo.mp4 --loop
 ```
-Zones are normalized polygons in [seed/zones.json](seed/zones.json) (the default splits the frame into Tool Shelf, Workbench, Entry Table and Drawer 2). The vocabulary is open: `--vocab "person,keys,multimeter,glasses,pill bottle"`.
+In short ([full explanation](docs/architecture.md#how-it-works-in-plain-words)):
+- **It names objects by itself, from a list of words.** YOLO-World looks for the words you give it; the default list covers person, multimeter, safety goggles, pliers, screwdriver, keys, mug, tape measure, soldering iron, scissors, wallet and phone. Change it without code: `--vocab "person,keys,multimeter,glasses,pill bottle"` (keep `person`). Objects not on the list are ignored, and each label is tracked as one object.
+- **It builds the real history.** An object that stays put for about a second becomes a *placed* event with a 5-second face-blurred clip, and one that's gone for 4 s becomes *removed*. The server assigns the zone, records a placement in a new zone as *moved*, and each object's events form its `git log`. In production, skip `-Seed` and load only the zones and default rules once with `python -m seed.seed --keep`.
+- **Zones** are normalized polygons in [seed/zones.json](seed/zones.json) (the default splits the frame into Tool Shelf, Workbench, Entry Table and Drawer 2). Redraw them to match where your camera points.
+- **Clips are saved locally first** in `data/clips/`, then mirrored to S3 in the background when `CHRONOGRID_S3_BUCKET` is set. The screens get a presigned S3 link once the copy is confirmed, and the local file until then.
+- **Demo reset** (`POST /api/demo/reset`) wipes camera events too, so reset before recording, not after.
 
 ### Connect any MCP host (Alexa+, Claude, VS Code, Cursor)
 Endpoint: `http://127.0.0.1:8787/mcp` (Streamable HTTP). To expose it to a cloud host, tunnel it and set `CHRONOGRID_HOST=0.0.0.0`.
