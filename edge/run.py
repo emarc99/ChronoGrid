@@ -18,7 +18,7 @@ import httpx
 import numpy as np
 
 from .clips import FrameBuffer, clip_name, write_clip
-from .detector import DEFAULT_VOCAB, Detector
+from .detector import DEFAULT_MODEL, DEFAULT_VOCAB, Detector
 from .tracker import PlacementTracker, TrackerEvent
 
 log = logging.getLogger("chronogrid.edge")
@@ -111,8 +111,10 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--source", default="0", help="webcam index or video file")
     p.add_argument("--server", default="http://127.0.0.1:8787")
-    p.add_argument("--vocab", default=",".join(DEFAULT_VOCAB), help="comma-separated labels to detect")
+    p.add_argument("--vocab", default=",".join(DEFAULT_VOCAB),
+                   help='comma-separated prompts; "prompt=label" records a different label')
     p.add_argument("--conf", type=float, default=0.2)
+    p.add_argument("--model", default=DEFAULT_MODEL, help="YOLO-World weights (s is ~2x faster, less accurate)")
     p.add_argument("--detect-every", type=float, default=0.35, help="seconds between detections")
     p.add_argument("--presence-zone", default="workbench")
     p.add_argument("--appliance", default="soldering iron")
@@ -133,7 +135,7 @@ def main() -> None:
         raise SystemExit(f"cannot open source {args.source}")
     file_fps = cap.get(cv2.CAP_PROP_FPS) if not isinstance(source, int) else 0
 
-    detector = Detector([v.strip() for v in args.vocab.split(",") if v.strip()], conf=args.conf)
+    detector = Detector([v.strip() for v in args.vocab.split(",") if v.strip()], args.model, conf=args.conf)
     tracker = PlacementTracker()
     agent = EdgeAgent(args.server, args.presence_zone, args.appliance, args.appliance_zone, Path("data/clips/edge"))
     detections, last_detect, det_rate = [], 0.0, 0.0

@@ -13,6 +13,8 @@ Track something else by changing the words, with no code changes (keep `person`,
 .\.venv\Scripts\python -m edge.run --vocab "person,mug,keys,screwdriver,charger,printer cartridge,heat gun"
 ```
 
+Wording matters more than you'd expect. On our desk, plain "pliers" was outscored by "scissors" while "red pliers" won at 0.45, and "smartphone" scored higher than "phone". A prompt can be recorded under a different label with `prompt=label`, e.g. `--vocab "person,red pliers=pliers,smartphone=phone"`. Each object keeps only its best-scoring label, and thin tools (screwdriver) get a lower confidence bar. Limits: a small CPU model in dim light misses some objects entirely; our lump hammer was never recognised, under any wording. The default model is the medium one (`yolov8m-worldv2`, about 0.4 s per frame on a laptop CPU); `--model data/models/yolov8s-worldv2.pt` is twice as fast and less accurate.
+
 How a clip gets its tag:
 1. **Detect:** about 3 times a second, each detection is a label plus a box.
 2. **Confirm:** the same label must stay in the same spot for 3 detections in a row (about a second), which filters out hands passing through and one-off misreads.
@@ -76,7 +78,7 @@ The derived tables (`object_state`, `presence`, `appliance_state`) are the "work
 
 ## Edge pipeline (`edge/`)
 1. `FrameBuffer` keeps the last 6 seconds of frames at 12 fps (960 px wide).
-2. `Detector` runs **YOLO-World v2** (open vocabulary) every ~0.35 s, at about 0.15 s per frame on a laptop CPU.
+2. `Detector` runs **YOLO-World v2** (open vocabulary, medium model, class-agnostic NMS) every ~0.35 s, at about 0.4 s per frame on a laptop CPU.
 3. `PlacementTracker` assumes one instance per label (which matches how people ask questions) and emits:
    - `placed` after N stable hits (IoU ≥ 0.5 between consecutive detections) when the object is new or moved (IoU < 0.3 versus the last reported box)
    - `removed` after 4 s of absence, unless a person box covers more than 50% of the last known box (occlusion)
